@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced History | AINSWERtainty</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Cabin+Sketch:wght@400;700&family=Sriracha&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+      :root{
+        --bg: #f5f7fb;
+        --surface: rgba(255,255,255,0.82);
+        --surface-solid: #ffffff;
+        --surface-2: #eef3ff;
+        --text: #172033;
+        --muted: #64748b;
+        --primary: #183a8f;
+        --primary-2: #2954c8;
+        --success: #1f8a4c;
+        --bio: #1d7a43;
+        --border: rgba(23, 32, 51, 0.08);
+        --shadow: 0 10px 30px rgba(23, 32, 51, 0.08);
+        --shadow-hover: 0 18px 42px rgba(24, 58, 143, 0.14);
+        --radius-lg: 24px;
+        --radius-md: 18px;
+        --radius-sm: 14px;
+        --header-height: 88px;
+
+        --report-bg: #ffffff;
+        --report-surface-2: #f0f4f8;
+        --report-text: #1f2937;
+        --report-muted: #6b7280;
+        --report-border: #d1d5db;
+        --report-primary: #0f766e;
+        --report-primary-hover: #115e59;
+        --report-success-bg: #dcfce7;
+        --report-success-text: #166534;
+        --report-error-bg: #fce7f3;
+        --report-error-text: #9d174d;
+        --report-radius: 16px;
+        --report-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+      }
+
+      *{ box-sizing:border-box; }
+      html{ scroll-behavior:smooth; height:100%; }
+
+      body{
+        margin:0;
+        min-height:100vh;
+        display:flex;
+        flex-direction:column;
+        font-family:'Kanit', sans-serif;
+        color:var(--text);
+        background: var(--bg);
+        
+        }
+      
+      a{ color:inherit; text-decoration:none; }
+      button, input, textarea, select{ font-family:inherit; }
+      
+      .top-bar{
+        position:sticky;
+        top:0;
+        z-index:1000;
+        min-height: 72px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:12px 32px;
+        background:rgba(255,255,255,.72);
+        backdrop-filter:blur(14px);
+        border-bottom:1px solid rgba(255,255,255,.65);
+        box-shadow:0 4px 24px rgba(0,0,0,.04);
+        flex-shrink:0;
+      }
+      .logo-group {
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+      }
+      .logo-group h1{
+        font-family:'Cabin Sketch', sans-serif;
+        font-size:42px;
+        font-weight:bold;
+        margin:0;
+        line-height:1;
+        
+      }
+
+      .logo-group p{
+        font-family:'Sriracha', sans-serif;
+        font-size:15px;
+        font-weight:300;
+        color:#475569;
+        margin:5px 0 0 0;
+        opacity:0.9;
+        letter-spacing:0.2px;
+      }
+
+      nav{ display:flex; align-items:center; gap:22px; }
+      nav a{ position:relative; font-size:15px; color:#334155; font-weight:400; padding:6px 0; }
+      nav a::after{
+        content:""; position:absolute; left:0; bottom:0; width:0; height:2px;
+        border-radius:999px; background:var(--primary); transition:width .25s ease;
+      }
+      nav a:hover::after{ width:100%; }
+
+      /* 🛠️ ขยายคอนเทนเนอร์หลักให้เต็มพื้นที่หน้าจอ (สไตล์ Full fluid width) */
+      .page-container{ width: 100%; padding: 0 32px; margin:32px auto 72px; flex:1; }
+      .table-wrap{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      .history-section, .history-card, .table-card, .table-wrap{ min-height:0; }
+      #history-table{ min-height:120px; }
+
+      .pill{
+        display:inline-flex; align-items:center; justify-content:center; padding:4px 10px;
+        border-radius:999px; font-size:11px; font-weight:700; line-height:1.2; white-space:nowrap;
+      }
+
+      .chart-box{ position:relative; width:100%; min-height:340px; height:420px; }
+      .chart-box canvas{ width:100% !important; height:100% !important; display:block; }
+      .sriracha{ font-family:'Sriracha', sans-serif; }
+
+      footer{ width:100%; background:#0f1120; color:#ffffff; padding:10px 40px; text-align:center; margin-top:auto; flex-shrink:0; }
+      .footer-top{ margin-bottom:2px; }
+      .footer-logo{ font-family:'Montserrat', sans-serif; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
+      .footer-sub{ font-family:'Sriracha', cursive; font-size:10px; color:#a0a0b0; margin-top:10px; }
+      .footer-divider{ height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); margin:6px auto; max-width:200px; }
+      .footer-bottom{ position:relative; display:flex; justify-content:center; align-items:center; min-height:20px; }
+      .copyright{ font-size:9px; color:#5c5c6d; text-transform:uppercase; }
+      
+      .visitor-wrapper{ position:absolute; right:0; top:50%; transform:translateY(-50%); }
+      .visitor-pill{ background:rgba(0,0,0,0.4); border-radius:6px; padding:3px 8px; display:flex; align-items:center; gap:6px; border:1px solid rgba(255,255,255,0.05); }
+      .live-dot{ width:5px; height:5px; background-color:#3b82f6; border-radius:50%; }
+      .live-text, .views-count{ font-size:9px; color:#888; }
+      .views-count{ border-left:1px solid rgba(255,255,255,0.1); padding-left:6px; }
+      #visitor-count{ color:#3b82f6; font-weight:bold; }
+
+      .report-overlay{ position:fixed; inset:0; display:grid; place-items:center; padding:20px; background:rgba(15, 23, 42, 0.45); z-index:9999; }
+      .report-overlay[hidden]{ display:none; }
+      .report-modal{ width:min(100%, 560px); background:var(--report-bg, #ffffff); border:1px solid var(--report-border, #d1d5db); border-radius:var(--report-radius, 16px); box-shadow:var(--report-shadow, 0 24px 60px rgba(15, 23, 42, 0.24)); padding:24px; font-family:'Kanit', sans-serif; text-align:left; }
+      .report-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px; }
+      .report-title{ margin:0 0 6px; font-size:24px; line-height:1.2; color:var(--report-text, #1f2937); font-weight:600; }
+      .report-subtitle{ margin:0; font-size:14px; color:var(--report-muted, #6b7280); }
+      .report-close{ width:40px; height:40px; border:0; border-radius:999px; background:var(--report-surface-2, #f0f4f8); color:var(--report-text, #1f2937); font-size:24px; line-height:1; cursor:pointer; }
+      .report-form-group{ margin-bottom:16px; }
+      .report-label{ display:block; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--report-text, #1f2937); }
+      .report-input, .report-textarea{ width:100%; border:1px solid var(--report-border, #d1d5db); border-radius:12px; padding:12px 14px; font-size:15px; color:var(--report-text, #1f2937); background:#ffffff; }
+      .report-input:focus, .report-textarea:focus{ outline:none; border-color:var(--report-primary, #0f766e); box-shadow:0 0 0 4px rgba(15, 118, 110, 0.12); }
+      .report-input[readonly]{ background:#f8fafc; color:#64748b; }
+      .report-textarea{ min-height:130px; resize:vertical; }
+      .report-actions{ display:flex; gap:12px; margin-top:20px; }
+      .report-btn{ border:0; border-radius:999px; padding:12px 18px; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s ease; }
+      .report-btn-primary{ background:var(--report-primary, #0f766e); color:#ffffff; }
+      .report-btn-primary:hover{ background:var(--report-primary-hover, #115e59); transform:translateY(-1px); }
+      .report-btn-secondary{ background:var(--report-surface-2, #f0f4f8); color:var(--report-text, #1f2937); }
+      .report-btn-secondary:hover{ background:#e2e8f0; }
+      .report-status{ display:none; margin-bottom:16px; padding:12px 14px; border-radius:12px; font-size:14px; font-weight:600; }
+      .report-status.show{ display:block; }
+      .report-status.success{ background:var(--report-success-bg, #dcfce7); color:var(--report-success-text, #166534); }
+      .report-status.error{ background:var(--report-error-bg, #fce7f3); color:var(--report-error-text, #9d174d); }
+
+      @media (max-width: 1280px){ .top-bar-controls { width: 100%; justify-content: flex-start; } }
+      @media (max-width: 960px){ .page-container{ width:100%; padding: 0 16px; margin:20px auto 48px; } }
+      @media (max-width: 768px){
+        .top-bar{ height:auto; padding:16px 18px; flex-direction:column; align-items:flex-start; gap:12px; }
+        nav{ width:100%; flex-wrap:wrap; gap:14px; }
+        .logo-group h1{ font-size:34px; }
+        .logo-group p{ font-size:14px; }
+        .footer-bottom{ flex-direction:column; gap:10px; }
+        .visitor-wrapper{ position:static; transform:none; margin-top:10px; }
+        .chart-box{ min-height:280px; height:320px; }
+      }
+      @media (max-width: 640px){
+        .report-modal{ padding:20px; border-radius:14px; }
+        .report-actions{ flex-direction:column; }
+        .report-btn{ width:100%; }
+        footer{ padding:12px 18px; }
+      }
+    </style>
+</head>
+
+<body>
+
+<header class="top-bar">
+    <div class="logo-group">
+    <a href="index.html" style="display: flex; align-items: center; gap: 12px;">
+      
+      <img 
+        src="images/logo5.png" 
+        alt="AINSWERtainty Logo" 
+        style="height: 42px; width: auto; object-fit: contain; display: block;"
+        onerror="this.style.display='none'; document.getElementById('logo-text-fallback').style.display='block';"
+      >
+      
+      <div id="logo-text-fallback" style="display: none; font-family: 'Cabin Sketch', sans-serif; font-size: 42px; font-weight: bold; color: #183a8f;">
+        AINSWERtainty
+      </div>
+
+      <div style="border-left: 1px solid rgba(23, 32, 51, 0.15); padding-left: 12px; margin-left: 4px;">
+        <p style="font-family: 'Sriracha', sans-serif; font-size: 11px; color: #475569; margin: 0; padding: 0; line-height: 1.2;">จัดการ Uncertainty อย่างชาญฉลาด</p>
+        <p style="font-family: 'Sriracha', sans-serif; font-size: 11px; color: #64748b; margin: 2px 0 0 0; padding: 0; line-height: 1.2;">มั่นใจทุกผลการทดสอบ</p>
+      </div>
+
+    </a>
+  </div>
+    <nav>
+        <a href="index.html" target="_blank" rel="noopener noreferrer">Home</a>
+        <a href="#" id="reportProblemLink">Report a problem</a>
+    </nav>
+</header>
+
+<!-- 🛠️ ปรับเปลี่ยน max-w-7xl เป็น max-w-full เพื่อปลดล็อกให้ตารางขยายความกว้างเต็มพื้นที่จอเบราว์เซอร์ -->
+<main class="page-container">
+    <div class="max-w-full mx-auto w-full">
+        <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg shadow-lg text-2xl" aria-hidden="true">📊</div>
+                <div>
+                    <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">History</h2>
+                </div>
+            </div>
+
+            <div class="top-bar-controls flex flex-wrap items-center gap-3">
+                <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search lab no / test item / source..."
+                    class="pl-4 pr-3 py-2 text-sm border border-gray-200 rounded-xl bg-white shadow-sm outline-none w-64 h-[38px] focus:ring-2 focus:ring-blue-400"
+                >
+                <input
+                    type="date"
+                    id="date-start"
+                    class="px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white shadow-sm outline-none h-[38px] text-slate-600"
+                >
+                <input
+                    type="date"
+                    id="date-end"
+                    class="px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white shadow-sm outline-none h-[38px] text-slate-600"
+                >
+                <select
+                    id="group-filter"
+                    class="px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white shadow-sm outline-none max-w-[240px] text-slate-700 font-medium focus:ring-2 focus:ring-blue-400 cursor-pointer h-[38px]"
+                >
+                    <option value="">ทุกกลุ่มงานทั้งหมด</option>
+                </select>
+
+                <button
+                    type="button"
+                    id="btn-refresh-history"
+                    onclick="refreshHistoryData()"
+                    class="bg-blue-500 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center h-[38px] w-[38px] shadow-sm active:scale-95 transition-all"
+                    aria-label="Refresh history"
+                    title="รีเฟรชข้อมูล"
+                >
+                    <span class="material-symbols-outlined text-[20px]" id="refresh-icon" aria-hidden="true">refresh</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">Total</div>
+                <div id="stat-total" class="text-3xl font-extrabold text-slate-800 mt-2">0</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">Bottom-up</div>
+                <div id="stat-bottomup" class="text-3xl font-extrabold text-blue-700 mt-2">0</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">Top-down</div>
+                <div id="stat-topdown" class="text-3xl font-extrabold text-emerald-700 mt-2">0</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 mb-10">
+            <div class="table-wrap">
+                <table class="w-full text-left border-collapse min-w-[1050px]">
+                    <thead class="bg-blue-600 border-b border-blue-700">
+                        <tr class="text-xs text-blue-50 uppercase font-bold tracking-wider">
+                            <th class="py-4 px-6 text-left">Date</th>
+                            <th class="px-5 text-center">Lab No.</th>
+                            <th class="px-6 text-center">Bottom-up</th>
+                            <th class="px-6 text-center">Top-down</th>
+                            <th class="px-6 text-center">Source</th>
+                            <th class="px-6 text-center">Test Item</th>
+                            <th class="px-6 text-center">Result</th>
+                            <th class="px-6 text-center">Unit</th>
+                            <th class="px-6 text-center">% Relative</th>
+                            <th class="px-6 text-center">Actions</th>
+                            <th class="px-6 text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table" class="divide-y divide-gray-50 text-sm"></tbody>
+                </table>
+            </div>
+            <div id="pagination-container" class="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-white border-t border-gray-200 gap-4"></div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div class="footer-container">
+        <div class="footer-top">
+            <div class="footer-logo">National Institute of Reference Laboratories</div>
+            <div class="footer-sub">สถาบันห้องปฏิบัติการอ้างอิงแห่งชาติ</div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-bottom">
+            <div class="copyright">&copy; 2026 AINSWERtainty. Developed by <span style="color: #3b82f6;">CRLC & BRLC</span></div>
+            <div class="visitor-wrapper">
+                <div class="visitor-pill">
+                    <div class="live-dot"></div>
+                    <span class="live-text">Live</span>
+                    <span class="views-count">Views: <span id="visitor-count">24</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- MODAL GRAPH & DETAIL -->
+<div id="modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[2000] backdrop-blur-sm p-4">
+    <div class="bg-white w-full max-w-3xl max-h-[88vh] rounded-3xl p-6 flex flex-col shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h2 id="detailModalTitle" class="font-bold text-xl text-slate-800">📄 Detail & Graph</h2>
+                <p id="detail-meta" class="mt-1 text-sm text-slate-500"></p>
+            </div>
+            <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl" aria-label="Close detail modal">✕</button>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                <div class="chart-box"><canvas id="chart"></canvas></div>
+            </div>
+            <div class="mt-5 flex justify-center">
+                <button type="button" onclick="loadBack()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-10 py-3 rounded-xl text-sm font-bold shadow-lg transition-all hover:scale-105 active:scale-95">
+                    🔁 โหลดกลับไปคำนวณ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL LOAD BACK PASSWORD -->
+<div id="load-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[3000] backdrop-blur-md p-4">
+    <div class="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl border border-blue-50" role="dialog" aria-modal="true" aria-labelledby="loadModalTitle">
+        <div class="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
+            <div class="absolute inset-0 bg-blue-100 rounded-full animate-pulse opacity-50"></div>
+            <div class="relative bg-blue-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </div>
+        </div>
+        <h2 id="loadModalTitle" class="text-2xl font-extrabold mb-2 text-slate-800 tracking-tight">โหลดข้อมูลกลับ</h2>
+        <p class="text-sm text-slate-500 mb-6 sriracha leading-relaxed">กรุณากรอก Operator Name เพื่อยืนยัน<br>การนำข้อมูลนี้กลับไปคำนวณใหม่</p>
+        <div class="relative mb-2">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <input type="text" id="load-password" placeholder="ระบุ Operator Name ของคุณ" class="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm">
+        </div>
+        <p id="load-error" class="text-xs text-red-500 font-medium mb-4 h-4 hidden flex items-center justify-center">Operator Name ไม่ถูกต้อง</p>
+        <div class="flex gap-3 mt-2">
+            <button type="button" onclick="closeLoadModal()" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 py-3 rounded-xl font-semibold shadow-sm transition-all active:scale-95">ยกเลิก</button>
+            <button type="button" onclick="confirmLoad()" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl font-semibold shadow-lg transition-all active:scale-95">ยืนยัน</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DELETE CONFIRMATION -->
+<div id="delete-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[3000] backdrop-blur-md p-4">
+    <div class="bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl border border-red-50" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
+            <div class="absolute inset-0 bg-red-100 rounded-full animate-pulse opacity-60"></div>
+            <div class="relative bg-red-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+        </div>
+        <h2 id="deleteModalTitle" class="text-2xl font-extrabold text-slate-800 mb-2">ยืนยันการลบข้อมูล</h2>
+        <p class="text-sm text-slate-500 mb-6 sriracha leading-relaxed">ข้อมูลจะถูกลบออกจากระบบอย่างถาวร<br><span class="text-red-500">กรุณากรอก Operator Name เพื่อยืนยัน</span></p>
+        <div class="relative mb-2">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <input type="text" id="delete-password" placeholder="ระ准 Operator Name ของคุณ" class="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/50 text-sm">
+        </div>
+        <p id="delete-error" class="text-xs text-red-500 font-medium mb-4 h-4 hidden flex items-center justify-center">Operator Name ไม่ถูกต้อง</p>
+        <div class="flex gap-3 mt-2">
+            <button type="button" onclick="closeDeleteModal()" class="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 py-3 rounded-xl font-semibold shadow-sm transition-all active:scale-95">ยกเลิก</button>
+            <button type="button" onclick="confirmDelete()" class="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-xl font-semibold shadow-lg transition-all active:scale-95">ลบข้อมูล</button>
+        </div>
+    </div>
+</div>
+
+<!-- REPORT PROBLEM LINK OVERLAY -->
+<div id="reportOverlay" class="report-overlay" hidden>
+    <div class="report-modal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+        <div class="report-header">
+            <div>
+                <h2 id="reportTitle" class="report-title">Report a Problem</h2>
+                <p class="report-subtitle">แจ้งปัญหาที่พบในการใช้งาน</p>
+            </div>
+            <button type="button" id="closeReportModal" class="report-close" aria-label="Close report modal">×</button>
+        </div>
+        <div id="statusBox" class="report-status" role="status" aria-live="polite"></div>
+        <form id="reportForm" novalidate>
+            <div class="report-form-group">
+                <label class="report-label" for="report-name">ชื่อ</label>
+                <input id="report-name" class="report-input" name="name" type="text" required>
+            </div>
+            <div class="report-form-group">
+                <label class="report-label" for="report-email">อีเมล</label>
+                <input id="report-email" class="report-input" name="email" type="email" required>
+            </div>
+            <div class="report-form-group">
+                <label class="report-label" for="report-page">หน้าที่พบปัญหา</label>
+                <input id="report-page" class="report-input" name="page" type="text" readonly required>
+            </div>
+            <div class="report-form-group">
+                <label class="report-label" for="report-description">รายละเอียด</label>
+                <textarea id="report-description" class="report-textarea" name="description" required></textarea>
+            </div>
+            <div class="report-actions">
+                <button type="submit" id="reportSubmitBtn" class="report-btn report-btn-primary">Submit</button>
+                <button type="button" id="cancelBtn" class="report-btn report-btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// 1. Constants & Global Variables
+// ==========================================
+let currentPage = 1;
+const rowsPerPage = 20;
+
+const API_URLS = {
+  bottomUp: "https://script.google.com/macros/s/AKfycbwXAbfbvgK3GKVoAuERdOli6jw-zHqLk8t1utqZbqR9DjkmdrXNeJsB-0DDtIFnREir2A/exec",
+  topDown: "https://script.google.com/macros/s/AKfycbxHn5dTAxh5SYbg61aDuZk8sOvQqWJj7CPk-HWTylycQIex9w36bAYUukeD3npfSCf3Tw/exec"
+};
+
+let mergedData = [];
+let filteredData = [];
+let selectedPayload = null;
+let selectedRecord = null;
+let chartInstance = null;
+let loadBackTarget = null;
+let deleteTarget = { id: null, userName: null, source: null };
+
+let start = "";
+let end = "";
+let search = "";
+let selectedGroup = ""; 
+
+// ==========================================
+// 2. Utility & Helper Functions
+// ==========================================
+function extractItems(json) {
+  if (Array.isArray(json)) return json;
+  if (Array.isArray(json?.items)) return json.items;
+  if (Array.isArray(json?.data?.items)) return json.data.items;
+  if (Array.isArray(json?.results)) return json.results;
+  return [];
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (isNaN(d)) return String(value);
+  return d.toLocaleString("th-TH");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttr(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;");
+}
+
+function resolveTargetPage(pageName, source) {
+  const page = String(pageName || "").trim();
+  const map = {
+    pH: "pH redirect.html",
+    Bottomup: "Bottom-up.html",
+    BOTTOMUP: "Bottom-up.html",
+    bottomup: "Bottom-up.html",
+    uncertainty: "Bottom-up.html",
+    validate: "validate.html",
+    VALIDATE: "validate.html",
+    CRM: "CRM.html",
+    crm: "CRM.html",
+    PT: "PT.html",
+    pt: "PT.html"
+  };
+
+  if (map[page]) return map[page];
+  if (source === "top-down") return "validate.html";
+  if (source === "bottom-up") return "Bottom-up.html";
+  return "index.html";
+}
+
+// ==========================================
+// 3. Data Normalization
+// ==========================================
+function normalizeTopDown(item) {
+  const payload = item?.data || {};
+  let moduleLabel = payload.topDownModule || payload.page || payload.dataPage || payload.sourcePage || "";
+  if (!moduleLabel) moduleLabel = "validate";
+
+  const biasUnit = payload?.biasModule?.labData?.find(x => x?.unit)?.unit;
+  const rwUnit = payload?.rwModule?.rwDataLevels?.find(x => x?.unit)?.unit;
+  const unit = payload?.selectedUnit || payload?.dashboard?.unit || biasUnit || rwUnit || payload?.unit || "-";
+
+  let resultText = "-";
+  if (payload?.dashboard?.finalReport) {
+    resultText = payload.dashboard.finalReport.replace(unit, "").trim();
+  } else {
+    const measured = Number(payload?.dashboard?.measuredValue || 0).toFixed(4);
+    const uPercent = parseFloat(payload?.combinedModule?.U || payload?.dashboard?.expandedU || 0);
+    const calculatedU = (parseFloat(measured) * (uPercent / 100)).toFixed(4);
+    resultText = `${measured} ± ${calculatedU}`;
+  }
+
+  let relativeText = payload?.combinedModule?.U || payload?.dashboard?.expandedU || payload?.combinedModule?.relativeU || "-";
+
+  return {
+    source: "top-down",
+    sourceLabel: "Top-down",
+    moduleLabel: String(moduleLabel).toUpperCase(),
+    timestamp: item.timestamp || payload.timestamp || payload.savedAtClient || "",
+    userName: item.userName || payload.userName || "",
+    groupName: item.groupName || payload.groupName || "", 
+    labNo: item.labNo || payload.labNo || "-", 
+    testItem: item.testItem || payload.testItem || "-",
+    unit,
+    resultText,   
+    relativeText, 
+    id: payload.id || payload.recordId || item.id || `${item.userName || "unknown"}_${item.testItem || "item"}_${item.timestamp || "no-time"}`,
+    payload,
+    original: item,
+    page: moduleLabel
+  };
+}
+
+function normalizeBottomUp(item) {
+  const payload = item?.data || {};
+  const summary = payload?.summary || {};
+  const pageName = payload.page || "Bottomup";
+
+  return {
+    source: "bottom-up",
+    sourceLabel: "Bottom-up",
+    moduleLabel: "BOTTOM-UP",
+    timestamp: item.timestamp || payload.timestamp || "",
+    userName: item.userName || payload.userName || "",
+    groupName: item.groupName || payload.groupName || "", 
+    labNo: item.labNo || payload.labNo || "-", 
+    testItem: item.testItem || payload.testItem || "-",
+    unit: payload?.typeA?.unit || payload?.unit || payload?.summary?.unit || "-",
+    resultText: `${Number(summary.mean || 0).toFixed(4)} ± ${Number(summary.expandedUncertainty || 0).toFixed(4)}`,
+    relativeText: summary.relativeUncertainty ?? "-",
+    id: payload.id || item.id || `${item.userName || "unknown"}_${item.testItem || "item"}_${item.timestamp || "no-time"}`,
+    payload,
+    original: item,
+    page: pageName
+  };
+}
+
+// ==========================================
+// 4. Data Fetching & Processing
+// ==========================================
+let lastHistoryHash = "";
+
+async function loadHistory() {
+  try {
+    const [bottomRes, topRes] = await Promise.all([
+      fetch(`${API_URLS.bottomUp}?t=${Date.now()}`, { cache: "no-store" }),
+      fetch(`${API_URLS.topDown}?t=${Date.now()}`, { cache: "no-store" })
+    ]);
+
+    if (!bottomRes.ok || !topRes.ok) {
+      throw new Error(`HTTP error: ${bottomRes.status}/${topRes.status}`);
+    }
+
+    const [bottomJson, topJson] = await Promise.all([bottomRes.json(), topRes.json()]);
+
+    const bottomItems = extractItems(bottomJson).map(normalizeBottomUp);
+    const topItems = extractItems(topJson).map(normalizeTopDown);
+
+    const newMergedData = [...bottomItems, ...topItems].sort((a, b) => {
+      const da = new Date(a.timestamp).getTime() || 0;
+      const db = new Date(b.timestamp).getTime() || 0;
+      return db - da;
+    });
+
+    const newHash = JSON.stringify(newMergedData.map(x => [x.id, x.timestamp, x.resultText, x.relativeText, x.unit, x.groupName, x.labNo]));
+    const hasChanged = newHash !== lastHistoryHash;
+
+    if (hasChanged) {
+      mergedData = newMergedData;
+      lastHistoryHash = newHash;
+      updateGroupDropdown(); 
+      renderStats();
+      renderTable();
+    }
+    return { ok: true, changed: hasChanged };
+  } catch (err) {
+    console.error("loadHistory error:", err);
+    return { ok: false, changed: false, error: err };
+  }
+}
+
+function updateGroupDropdown() {
+  const dropdown = document.getElementById("group-filter");
+  if (!dropdown) return;
+
+  const groups = new Set();
+  mergedData.forEach(item => {
+    if (item.groupName && item.groupName.trim() !== "") {
+      groups.add(item.groupName.trim());
+    }
+  });
+
+  dropdown.innerHTML = '<option value="">ทุกกลุ่มงานทั้งหมด</option>';
+  Array.from(groups).sort().forEach(group => {
+    const option = document.createElement("option");
+    option.value = group;
+    option.textContent = group;
+    if (group === selectedGroup) option.selected = true;
+    dropdown.appendChild(option);
+  });
+}
+
+// ==========================================
+// 5. DOM Rendering & Modal Actions
+// ==========================================
+function renderStats() {
+  document.getElementById("stat-total").innerText = mergedData.length;
+  document.getElementById("stat-bottomup").innerText = mergedData.filter(x => x.source === "bottom-up").length;
+  document.getElementById("stat-topdown").innerText = mergedData.filter(x => x.source === "top-down").length;
+}
+
+function renderTable() {
+  const table = document.getElementById("history-table");
+  if (!table) return;
+  table.innerHTML = "";
+
+  const startDate = start ? new Date(start) : null;
+  const endDate = end ? new Date(end) : null;
+  if (endDate) endDate.setHours(23, 59, 59, 999);
+
+  filteredData = mergedData.filter(item => {
+    const text = `${item.labNo} ${item.testItem} ${item.sourceLabel} ${item.moduleLabel} ${item.groupName || ""} ${item.unit || ""}`.toLowerCase();
+    const dateValue = new Date(item.timestamp);
+    const hasValidDate = !isNaN(dateValue.getTime());
+
+    if (search && !text.includes(search)) return false;
+    if (startDate && hasValidDate && dateValue < startDate) return false;
+    if (endDate && hasValidDate && dateValue > endDate) return false;
+    if (selectedGroup && item.groupName !== selectedGroup) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+  if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+  if (totalPages === 0) currentPage = 1;
+
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + rowsPerPage);
+
+  paginatedData.forEach((item, index) => {
+    const actualIndex = startIndex + index;
+    const row = document.createElement("tr");
+    row.className = "hover:bg-slate-50 transition-colors border-b border-gray-50";
+
+    row.innerHTML = `
+      <td class="py-3.5 px-6 text-left text-sm text-slate-500 font-kanit font-semibold whitespace-nowrap">${formatDate(item.timestamp)}</td>
+      <td class="px-5 text-center text-sm font-bold text-slate-600 whitespace-nowrap">${escapeHtml(item.labNo)}</td>
+      <td class="px-5 text-center">${item.source === "bottom-up" ? '<span class="pill bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold tracking-wide">Bottom-up</span>' : '<span class="text-sm text-slate-300">-</span>'}</td>
+      <td class="px-5 text-center">${item.source === "top-down" ? '<span class="pill bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold tracking-wide">Top-down</span>' : '<span class="text-sm text-slate-300">-</span>'}</td>
+      <td class="px-5 text-center"><span class="pill ${item.source === "top-down" ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'} text-xs font-semibold tracking-wide">${escapeHtml(item.moduleLabel)}</span></td>
+      <td class="px-5 text-center text-sm font-semibold text-slate-700">${escapeHtml(item.testItem)}</td>
+      <td class="px-5 text-center font-kanit text-sm md:text-base ${item.source === "top-down" ? "text-emerald-600" : "text-blue-600"} font-semibold whitespace-nowrap">${escapeHtml(String(item.resultText))}</td>
+      <td class="px-5 text-center text-sm text-slate-700 font-medium whitespace-nowrap">${escapeHtml(String(item.unit || "-"))}</td>
+      <td class="px-5 text-center"><span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">${escapeHtml(formatPercent2(item.relativeText))}</span></td>
+      <td class="px-5 text-center"><button type="button" onclick="openDetailByIndex(${actualIndex})" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow-sm transition-colors">View</button></td>
+      <td class="px-5 text-center">
+        <button type="button" class="btn-delete flex items-center justify-center w-8 h-8 mx-auto bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors" data-id="${escapeAttr(String(item.id))}" data-user="${escapeAttr(String(item.userName))}" data-source="${escapeAttr(String(item.source))}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        </button>
+      </td>
+    `;
+    table.appendChild(row);
+  });
+
+  renderPagination(totalPages);
+
+  table.querySelectorAll(".btn-delete").forEach(btn => {
+    btn.addEventListener("click", () => { openDeleteModal(btn.dataset.id, btn.dataset.user, btn.dataset.source); });
+  });
+}
+
+function formatPercent2(value) {
+  const num = parseFloat(String(value ?? "").replace('%', '').trim());
+  if (isNaN(num)) return String(value || "-");
+  return `${num.toFixed(2)}%`;
+}
+
+// เปลี่ยนเลขหน้า
+function changePage(pageNumber) { currentPage = pageNumber; renderTable(); }
+
+function renderPagination(totalPages) {
+  const container = document.getElementById("pagination-container");
+  if (!container) return;
+
+  if (filteredData.length === 0) {
+    container.innerHTML = `<div class="text-sm text-gray-500 w-full text-center">ไม่พบข้อมูล</div>`;
+    return;
+  }
+  if (totalPages <= 1) {
+    container.innerHTML = `<div class="text-sm text-gray-500 font-medium">กำลังแสดง ${filteredData.length} รายการทั้งหมด</div>`;
+    return;
+  }
+
+  const startIndex = (currentPage - 1) * rowsPerPage + 1;
+  const endIndex = Math.min(currentPage * rowsPerPage, filteredData.length);
+
+  let html = `<div class="text-sm text-gray-500 font-medium">กำลังแสดง <span class="text-slate-800 font-bold">${startIndex}</span> ถึง <span class="text-slate-800 font-bold">${endIndex}</span> จากทั้งหมด <span class="text-slate-800 font-bold">${filteredData.length}</span> รายการ</div><div class="flex items-center gap-1 mt-3 sm:mt-0">`;
+  html += `<button type="button" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-50 text-gray-600 transition-colors shadow-sm">&laquo; ก่อนหน้า</button>`;
+
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + 4);
+  if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+  if (startPage > 1) {
+    html += `<button type="button" onclick="changePage(1)" class="w-8 h-8 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 text-gray-600 flex items-center justify-center">1</button>`;
+    if (startPage > 2) html += `<span class="px-1 text-gray-400">...</span>`;
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    if (i === currentPage) {
+      html += `<button type="button" disabled class="w-8 h-8 rounded-lg border border-blue-500 bg-blue-50 text-blue-600 text-sm font-extrabold flex items-center justify-center">${i}</button>`;
+    } else {
+      html += `<button type="button" onclick="changePage(${i})" class="w-8 h-8 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 text-gray-600 flex items-center justify-center">${i}</button>`;
+    }
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) html += `<span class="px-1 text-gray-400">...</span>`;
+    html += `<button type="button" onclick="changePage(${totalPages})" class="w-8 h-8 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 text-gray-600 flex items-center justify-center">${totalPages}</button>`;
+  }
+
+  html += `<button type="button" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-50 text-gray-600 transition-colors shadow-sm ml-1">ถัดไป &raquo;</button></div>`;
+  container.innerHTML = html;
+}
+
+function closeModal() {
+  const modal = document.getElementById("modal");
+  if (modal) {
+    modal.classList.remove("flex");
+    modal.classList.add("hidden");
+  }
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+}
+
+function closeLoadModal() {
+  const loadModal = document.getElementById("load-modal");
+  if (loadModal) {
+    loadModal.classList.remove("flex");
+    loadModal.classList.add("hidden");
+  }
+  const passInput = document.getElementById("load-password");
+  if (passInput) passInput.value = "";
+  const errorMsg = document.getElementById("load-error");
+  if (errorMsg) errorMsg.classList.add("hidden");
+}
+
+function openDetailByIndex(index) {
+  const record = filteredData[index];
+  if (!record) return;
+
+  selectedRecord = record;
+  selectedPayload = record.payload;
+  loadBackTarget = record.userName;
+
+  document.getElementById("detail-meta").innerHTML = `
+    ${record.source === "top-down" ? '<span class="pill bg-emerald-100 text-emerald-700 border border-emerald-200">Top-down</span>' : '<span class="pill bg-blue-100 text-blue-700 border border-blue-200">Bottom-up</span>'}
+    <span class="ml-2 pill bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(record.moduleLabel)}</span>
+    <span class="ml-2 font-bold text-blue-600 font-mono">[${escapeHtml(record.labNo)}]</span>
+    <span class="ml-1 font-semibold text-slate-700">${escapeHtml(record.groupName || "ไม่ระบุกลุ่มงาน")}</span>
+    <span class="ml-2 font-bold text-slate-800">| ${escapeHtml(record.testItem)}</span>
+  `;
+
+  const modal = document.getElementById("modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  }
+  requestAnimationFrame(() => {
+    drawBarChart(record);
+    if (chartInstance) chartInstance.resize();
+  });
+}
+
+function loadBack() {
+  const passInput = document.getElementById("load-password");
+  if (passInput) passInput.value = "";
+  const errorMsg = document.getElementById("load-error");
+  if (errorMsg) errorMsg.classList.add("hidden");
+
+  const loadModal = document.getElementById("load-modal");
+  if (loadModal) {
+    loadModal.classList.remove("hidden");
+    loadModal.classList.add("flex");
+  }
+}
+
+function confirmLoad() {
+  if (!selectedPayload || !selectedRecord) return;
+
+  const inputPass = document.getElementById("load-password").value;
+  if (inputPass !== loadBackTarget) {
+    document.getElementById("load-error").classList.remove("hidden");
+    return;
+  }
+
+  try {
+    const recoveryPayload = {
+      ...selectedPayload,
+      originalId: selectedRecord.id,
+      originalSource: selectedRecord.source,
+      originalTimestamp: selectedRecord.timestamp
+    };
+    localStorage.setItem("recoveryData", JSON.stringify(recoveryPayload));
+  } catch (err) {
+    console.error(err);
+    alert("ไม่สามารถเตรียมข้อมูลสำหรับโหลดกลับได้ เนื่องจากเบราว์เซอร์บล็อกการจัดเก็บข้อมูล");
+    return;
+  }
+
+  closeLoadModal();
+  closeModal();
+
+  const targetPage = resolveTargetPage(selectedRecord.page, selectedRecord.source);
+  window.open(targetPage, "_blank", "noopener");
+}
+
+function openDeleteModal(id, userName, source) {
+  deleteTarget = { id, userName, source };
+  document.getElementById("delete-password").value = "";
+  document.getElementById("delete-error").classList.add("hidden");
+
+  const modal = document.getElementById("delete-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  }
+}
+
+function closeDeleteModal() {
+  const modal = document.getElementById("delete-modal");
+  if (modal) {
+    modal.classList.remove("flex");
+    modal.classList.add("hidden");
+  }
+}
+
+async function confirmDelete() {
+  const inputPass = document.getElementById("delete-password").value;
+  if (inputPass !== deleteTarget.userName) {
+    document.getElementById("delete-error").classList.remove("hidden");
+    return;
+  }
+
+  try {
+    closeDeleteModal();
+    const targetUrl = deleteTarget.source === "top-down" ? API_URLS.topDown : API_URLS.bottomUp;
+    const body = new URLSearchParams();
+    body.append("payload", JSON.stringify({ action: "delete", id: deleteTarget.id, userName: deleteTarget.userName }));
+
+    const res = await fetch(targetUrl, { method: "POST", body });
+    if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+    await loadHistory();
+  } catch (err) {
+    console.error(err);
+    alert("เกิดข้อผิดพลาดในการลบข้อมูล");
+  }
+}
+
+function drawBarChart(record) {
+  const canvas = document.getElementById("chart");
+  if (!canvas || !record || typeof Chart === "undefined") return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  if (chartInstance) chartInstance.destroy();
+
+  let labels = [];
+  let rawData = [];
+
+  if (record.source === "bottom-up") {
+    const payload = record.payload || {};
+    if (payload?.typeA?.rsu !== undefined) {
+      labels.push("Type A");
+      rawData.push(parseFloat(payload.typeA.rsu) || 0);
+    }
+    if (Array.isArray(payload?.typeB)) {
+      payload.typeB.forEach((b, i) => {
+        const val = parseFloat(b.totalRsu || b.rsu || 0);
+        if (!isNaN(val)) {
+          labels.push(b.sourceName || b.name || b.parentType || `Type B${i + 1}`);
+          rawData.push(val);
+        }
+      });
+    }
+  } else {
+    const p = record.payload || {};
+    const methodBias = parseFloat(p?.dashboard?.methodBias || 0);
+    const reproducibility = parseFloat(p?.dashboard?.reproducibility || 0);
+
+    if (!isNaN(methodBias) && methodBias !== 0) { labels.push("Method Bias"); rawData.push(methodBias); }
+    if (!isNaN(reproducibility) && reproducibility !== 0) { labels.push("Reproducibility"); rawData.push(reproducibility); }
+
+    if (!rawData.length) {
+      labels = ["Method Bias", "Reproducibility"];
+      rawData = [parseFloat(p?.dashboard?.methodBias || 0), parseFloat(p?.dashboard?.reproducibility || 0)];
+    }
+  }
+
+  if (!rawData.length) { labels = ["No data"]; rawData = [0]; }
+
+  const sumSq = rawData.reduce((sum, val) => sum + (val * val), 0);
+  const finalData = rawData.map(val => sumSq === 0 ? 0 : parseFloat((((val * val) / sumSq) * 100).toFixed(3)));
+
+  chartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Contribution (%)",
+        data: finalData,
+        backgroundColor: ["#3b82f6", "#64748b", "#10b981", "#8b5cf6", "#f59e0b", "#f97316", "#ef4444", "#06b6d4"],
+        borderRadius: 8, maxBarThickness: 60
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: "Contribution (%)" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+async function refreshHistoryData() {
+  const btn = document.getElementById("btn-refresh-history");
+  const icon = document.getElementById("refresh-icon");
+  if (btn && icon) {
+    btn.disabled = true; btn.style.opacity = "0.6";
+    icon.classList.add("animate-spin");
+  }
+  try { await loadHistory(); } catch (error) { console.error(error); } 
+  finally {
+    if (btn && icon) {
+      btn.disabled = false; btn.style.opacity = "1";
+      icon.classList.remove("animate-spin");
+    }
+  }
+}
+
+function initVisitorCounter() {
+  const countEl = document.getElementById("visitor-count");
+  if (!countEl) return;
+  fetch("https://api.counterapi.dev/v1/ainswertainty/history-page3/up")
+    .then(res => res.json()).then(res => { countEl.innerText = (res.count ?? 0).toLocaleString(); })
+    .catch(() => { countEl.innerText = "Online"; });
+}
+
+// ==========================================
+// 6. DOMContentLoaded Initialization
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+  const CONFIG = { scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec" };
+
+  const overlay = document.getElementById("reportOverlay");
+  const form = document.getElementById("reportForm");
+  const reportSubmitBtn = document.getElementById("reportSubmitBtn");
+  const statusBox = document.getElementById("statusBox");
+  const closeBtn = document.getElementById("closeReportModal");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const reportProblemLink = document.getElementById("reportProblemLink");
+  const pageInput = document.getElementById("report-page");
+
+  if (overlay && form && reportSubmitBtn && statusBox && closeBtn && cancelBtn && reportProblemLink && pageInput) {
+    reportProblemLink.addEventListener("click", (e) => { e.preventDefault(); pageInput.value = window.location.href; overlay.hidden = false; });
+    closeBtn.addEventListener("click", () => { overlay.hidden = true; });
+    cancelBtn.addEventListener("click", () => { overlay.hidden = true; });
+    
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      reportSubmitBtn.disabled = true;
+      try {
+        await fetch(CONFIG.scriptUrl, { method: "POST", mode: "no-cors", body: JSON.stringify({ name: form.name.value, email: form.email.value, page: form.page.value, description: form.description.value }) });
+        statusBox.className = "report-status show success"; statusBox.textContent = "ส่งข้อมูลเรียบร้อยแล้ว";
+        setTimeout(() => { overlay.hidden = true; form.reset(); statusBox.className = "report-status"; }, 1200);
+      } catch (err) {
+        statusBox.className = "report-status show error"; statusBox.textContent = "เกิดข้อผิดพลาด";
+      } finally { reportSubmitBtn.disabled = false; }
+    });
+  }
+
+  loadHistory();
+  initVisitorCounter();
+  setInterval(loadHistory, 30000);
+
+  document.getElementById("group-filter")?.addEventListener("change", e => { selectedGroup = e.target.value; currentPage = 1; renderTable(); });
+  document.getElementById("search-input")?.addEventListener("input", e => { search = e.target.value.toLowerCase(); currentPage = 1; renderTable(); });
+  document.getElementById("date-start")?.addEventListener("change", e => { start = e.target.value; currentPage = 1; renderTable(); });
+  document.getElementById("date-end")?.addEventListener("change", e => { end = e.target.value; currentPage = 1; renderTable(); });
+});
+</script>
+</body>
+</html>

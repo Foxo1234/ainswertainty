@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AINSWERtainty</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Montserrat:wght@600;700&family=Cabin+Sketch:wght@400;700&family=Sriracha&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       CSS หลักของหน้าเว็บ (ของคุณ)
+    ========================================= */
+    :root{
+      --bg: #f5f7fb;
+      --surface: rgba(255,255,255,0.82);
+      --surface-solid: #ffffff;
+      --surface-2: #eef3ff;
+      --text: #172033;
+      --muted: #64748b;
+      --primary: #183a8f;
+      --primary-2: #2954c8;
+      --success: #1f8a4c;
+      --bio: #1d7a43;
+      --border: rgba(23, 32, 51, 0.08);
+      --shadow: 0 10px 30px rgba(23, 32, 51, 0.08);
+      --shadow-hover: 0 18px 42px rgba(24, 58, 143, 0.14);
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+      --header-height: 88px;
+      
+      /* ตัวแปรสำหรับ Popup Report */
+      --report-bg: #ffffff;
+      --report-surface-2: #f0f4f8;
+      --report-text: #1f2937;
+      --report-muted: #6b7280;
+      --report-border: #d1d5db;
+      --report-primary: #0f766e;
+      --report-primary-hover: #115e59;
+      --report-success-bg: #dcfce7;
+      --report-success-text: #166534;
+      --report-error-bg: #fce7f3;
+      --report-error-text: #9d174d;
+      --report-radius: 16px;
+      --report-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+    }
+
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
+    body{
+      margin:0;
+      font-family:'Kanit', sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(41,84,200,.10), transparent 35%),
+        radial-gradient(circle at bottom left, rgba(31,138,76,.08), transparent 30%),
+        var(--bg);
+    }
+
+    a{ color:inherit; text-decoration:none; }
+
+    header.top-bar{
+        position:sticky;
+        top:0;
+        z-index:1000;
+        min-height:var(--header-height);
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:12px 32px;
+        background:rgba(255,255,255,.72);
+        backdrop-filter:blur(14px);
+        border-bottom:1px solid rgba(255,255,255,.65);
+        box-shadow:0 4px 24px rgba(0,0,0,.04);
+      }
+
+    .logo-group h1 {
+            font-family: 'Cabin Sketch', sans-serif;
+            font-size: 42px;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1;
+        }
+
+    .logo-group p {
+            font-family: 'Sriracha', sans-serif;
+            font-size: 15px;
+            font-weight: 300;
+            color: #475569;
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            letter-spacing: 0.2px;
+        }
+
+    nav{
+      display:flex;
+      align-items:center;
+      gap:22px;
+    }
+
+    nav a{
+      position:relative;
+      font-size:15px;
+      color:#334155;
+      font-weight:400;
+      padding:6px 0;
+    }
+
+    nav a::after{
+      content:"";
+      position:absolute;
+      left:0;
+      bottom:0;
+      width:0;
+      height:2px;
+      border-radius:999px;
+      background:var(--primary);
+      transition:width .25s ease;
+    }
+
+    nav a:hover::after{ width:100%; }
+
+    .main-content{
+      width:min(1180px, calc(100% - 32px));
+      margin:32px auto 72px;
+    }
+
+    .hero-card{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:24px;
+      padding:32px;
+      border-radius:32px;
+      background:linear-gradient(135deg, #183a8f 0%, #2954c8 55%, #5b7df0 100%);
+      color:#fff;
+      box-shadow:0 20px 50px rgba(24,58,143,.22);
+      margin-bottom:28px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .hero-card::before{
+      content:"";
+      position:absolute;
+      inset:auto -40px -40px auto;
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      background:rgba(255,255,255,.08);
+    }
+
+    .hero-copy, .hero-side{ position:relative; z-index:1; }
+
+    .hero-copy h2{
+      margin:0 0 10px;
+      font-size:34px;
+      line-height:1.15;
+      font-weight:600;
+    }
+
+    .hero-copy p{
+      margin:0 0 20px;
+      max-width:58ch;
+      color:rgba(255,255,255,.86);
+      font-size:15px;
+      line-height:1.7;
+    }
+
+    .hero-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:46px;
+      padding:0 18px;
+      border-radius:999px;
+      font-weight:500;
+      transition:.25s ease;
+      cursor:pointer;
+    }
+
+    .btn-primary{
+      background:#fff;
+      color:var(--primary);
+    }
+
+    .btn-primary:hover{
+      transform:translateY(-2px);
+      box-shadow:0 10px 20px rgba(255,255,255,.18);
+    }
+
+    .hero-side{
+      display:grid;
+      gap:14px;
+      align-content:center;
+    }
+
+    .mini-panel{
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      backdrop-filter:blur(10px);
+      border-radius:20px;
+      padding:18px 20px;
+    }
+
+    .mini-panel strong{
+      display:block;
+      font-size:30px;
+      color:#ffe66d;
+      font-family:'Montserrat', sans-serif;
+      margin-bottom:4px;
+    }
+
+    .mini-panel span{
+      font-size:13px;
+      color:rgba(255,255,255,.82);
+    }
+
+    .category-section{
+      margin-top:26px;
+    }
+
+    .section-banner{
+      padding:24px 28px;
+      border-radius:24px;
+      color:#fff;
+      background:linear-gradient(135deg, #16367f 0%, #244fbf 100%);
+      box-shadow:var(--shadow);
+      margin-bottom:22px;
+    }
+
+    .section-banner.bio-gradient{
+      background:linear-gradient(135deg, #1f8a4c 0%, #16653a 100%);
+    }
+
+    .section-banner h2{
+      margin:0 0 6px;
+      font-size:28px;
+      line-height:1.2;
+      font-weight:600;
+    }
+
+    .section-banner p{
+      margin:0;
+      color:rgba(255,255,255,.88);
+      font-size:14px;
+    }
+
+    .cards-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:18px;
+    }
+
+    .card{
+      background:var(--surface);
+      backdrop-filter:blur(12px);
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:24px 20px;
+      box-shadow:var(--shadow);
+      transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+      min-height:220px;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      text-align:left;
+      cursor: pointer;
+    }
+
+    .card:hover{
+      transform:translateY(-4px);
+      box-shadow:var(--shadow-hover);
+      border-color:rgba(24,58,143,.16);
+      background:rgba(255,255,255,.94);
+    }
+
+    .icon{
+      width:56px;
+      height:56px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      margin-bottom:16px;
+      background:linear-gradient(180deg, #eef4ff 0%, #e4ecff 100%);
+      color:var(--primary);
+      font-size:28px;
+    }
+
+    .icon img{
+      width:30px;
+      height:30px;
+      object-fit:contain;
+    }
+
+    .card h3{
+      margin:0 0 10px;
+      font-size:18px;
+      line-height:1.35;
+      font-weight:600;
+      color:var(--text);
+      min-height:auto;
+    }
+
+    .card p{
+      margin:0;
+      font-size:14px;
+      line-height:1.7;
+      color:var(--muted);
+    }      
+
+    .history-banner{
+        background:linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
+      }
+
+    .history-card{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      padding:24px 26px;
+      border-radius:24px;
+      background:rgba(255,255,255,.86);
+      border:1px solid rgba(23, 32, 51, 0.08);
+      box-shadow:0 12px 30px rgba(23, 32, 51, 0.08);
+      backdrop-filter:blur(12px);
+    }
+
+    .history-copy{
+      display:flex;
+      align-items:center;
+      gap:18px;
+    }
+
+    .history-icon{
+      width:64px;
+      height:64px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(180deg, #eef4ff 0%, #e0ebff 100%);
+      flex-shrink:0;
+    }
+
+    .history-copy h3{
+      margin:0 0 6px;
+      font-size:22px;
+      font-weight:600;
+      color:var(--text);
+    }
+
+    .history-copy p{
+      margin:0;
+      font-size:14px;
+      line-height:1.7;
+      color:var(--muted);
+      max-width:70ch;
+    }
+
+    .btn-history{
+      background:linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+      color:#fff;
+      min-width:190px;
+      box-shadow:0 12px 24px rgba(24,58,143,.16);
+    }
+
+    .btn-history:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 28px rgba(24,58,143,.22);
+    }
+
+    footer {
+            width: 100%;
+            background: #0f1120;
+            color: #ffffff;
+            padding: 10px 40px;
+            text-align: center;
+        }
+
+    .footer-top { margin-bottom: 2px; }
+
+    .footer-logo {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .footer-sub {
+        font-family: 'Sriracha', cursive;
+        font-size: 10px;
+        color: #a0a0b0;
+        margin-top: 10px;
+    }
+
+    .footer-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        margin: 6px auto;
+        max-width: 200px;
+    }
+
+    .footer-bottom {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 20px;
+    }
+    
+    .copyright {
+        font-size: 9px;
+        color: #5c5c6d;
+        text-transform: uppercase;
+    }
+
+    .visitor-wrapper {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .visitor-pill {
+        background: rgba(0,0,0,0.4);
+        border-radius: 6px;
+        padding: 3px 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .live-dot {
+        width: 5px;
+        height: 5px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+    }
+
+    .live-text, .views-count {
+        font-size: 9px;
+        color: #888;
+    }
+
+    .views-count {
+        border-left: 1px solid rgba(255,255,255,0.1);
+        padding-left: 6px;
+    }
+
+    #visitor-count { color: #3b82f6; font-weight: bold; }
+
+    /* =========================================
+       CSS ของ Popup Report a Problem
+    ========================================= */
+    .report-overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 9999;
+    }
+
+    .report-overlay[hidden] {
+      display: none;
+    }
+
+    .report-modal {
+      width: min(100%, 560px);
+      background: var(--report-bg);
+      border: 1px solid var(--report-border);
+      border-radius: var(--report-radius);
+      box-shadow: var(--report-shadow);
+      padding: 24px;
+      /* แก้ไม่ให้ font ของ Modal ตาม body */
+      font-family: Arial, sans-serif; 
+      text-align: left;
+    }
+
+    .report-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .report-title {
+      margin: 0 0 6px;
+      font-size: 24px;
+      line-height: 1.2;
+      color: var(--report-text);
+      font-family: Arial, sans-serif;
+    }
+
+    .report-subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: var(--report-muted);
+    }
+
+    .report-close {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--report-surface-2);
+      color: var(--report-text);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .report-form-group {
+      margin-bottom: 16px;
+    }
+
+    .report-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--report-text);
+    }
+
+    .report-required {
+      color: #dc2626;
+    }
+
+    .report-input,
+    .report-textarea {
+      width: 100%;
+      border: 1px solid var(--report-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--report-text);
+      background: #ffffff;
+      font-family: inherit;
+    }
+
+    .report-input:focus,
+    .report-textarea:focus {
+      outline: none;
+      border-color: var(--report-primary);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+    }
+
+    .report-textarea {
+      min-height: 130px;
+      resize: vertical;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .report-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .report-btn-primary {
+      background: var(--report-primary);
+      color: #ffffff;
+    }
+
+    .report-btn-primary:hover {
+      background: var(--report-primary-hover);
+    }
+
+    .report-btn-secondary {
+      background: var(--report-surface-2);
+      color: var(--report-text);
+    }
+
+    .report-status {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .report-status.show {
+      display: block;
+    }
+
+    .report-status.success {
+      background: var(--report-success-bg);
+      color: var(--report-success-text);
+    }
+
+    .report-status.error {
+      background: var(--report-error-bg);
+      color: var(--report-error-text);
+    }
+
+    /* Responsive */
+    @media (max-width: 960px){
+      .hero-card,
+      .cards-grid{
+        grid-template-columns:1fr 1fr;
+      }
+      .hero-card{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width: 768px){
+      header.top-bar{
+        height:auto;
+        padding:16px 18px;
+        flex-direction:column;
+        align-items:flex-start;
+        gap:12px;
+      }
+      nav{
+        width:100%;
+        flex-wrap:wrap;
+        gap:14px;
+      }
+      .main-content{
+        width:min(100% - 20px, 1180px);
+        margin:20px auto 48px;
+      }
+      .hero-card{
+        padding:24px 20px;
+        border-radius:24px;
+      }
+      .hero-copy h2{ font-size:26px; }
+      .section-banner h2{ font-size:22px; }
+      .cards-grid{ grid-template-columns:1fr; }
+      .history-card{
+        flex-direction:column;
+        align-items:flex-start;
+        padding:20px;
+      }
+      .btn-history{ width:100%; }
+      .visitor-wrapper {
+          position: static;
+          transform: none;
+          margin-top: 20px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .report-modal {
+          padding: 20px;
+          border-radius: 14px;
+      }
+      .report-actions {
+          flex-direction: column;
+      }
+      .report-btn {
+          width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="logo-group">
+    <a href="index.html" style="display: flex; align-items: center; gap: 12px;">
+      
+      <img 
+        src="images/logo5.png" 
+        alt="AINSWERtainty Logo" 
+        style="height: 42px; width: auto; object-fit: contain; display: block;"
+        onerror="this.style.display='none'; document.getElementById('logo-text-fallback').style.display='block';"
+      >
+      
+      <div id="logo-text-fallback" style="display: none; font-family: 'Cabin Sketch', sans-serif; font-size: 42px; font-weight: bold; color: #183a8f;">
+        AINSWERtainty
+      </div>
+
+      <div style="border-left: 1px solid rgba(23, 32, 51, 0.15); padding-left: 12px; margin-left: 4px;">
+        <p style="font-family: 'Sriracha', sans-serif; font-size: 11px; color: #475569; margin: 0; padding: 0; line-height: 1.2;">จัดการ Uncertainty อย่างชาญฉลาด</p>
+        <p style="font-family: 'Sriracha', sans-serif; font-size: 11px; color: #64748b; margin: 2px 0 0 0; padding: 0; line-height: 1.2;">มั่นใจทุกผลการทดสอบ</p>
+      </div>
+
+    </a>
+  </div>
+  
+  <nav>
+    <a href="index.html">Home</a>
+    <!-- เปลี่ยน href เป็น # เพื่อไม่ให้เปลี่ยนหน้า และใส่ id="reportProblemLink" เพื่อให้ JS จับ event -->
+    <a href="#" id="reportProblemLink">Report a problem</a>
+  </nav>
+</header>
+
+<main class="main-content">
+    <section class="hero-card">
+      <div class="hero-copy">
+        <h2>จัดการ Measurement Uncertainty อย่างเป็นระบบในที่เดียว</h2>
+        <p>
+          วิเคราะห์แนวโน้มค่า uncertainty, คำนวณแบบ Top-down และ Bottom-up,
+          และจัดทำรายงานให้พร้อมใช้งานสำหรับงานห้องปฏิบัติการตามแนวทางมาตรฐาน
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="trend.html">ดูแนวโน้มทั้งหมด</a>
+        </div>
+      </div>
+      <div class="hero-side">
+        <div class="mini-panel">
+          <strong>Top-down</strong>
+          <span>Nordtest Report TR537 / SANTE 11312/2021</span>
+        </div>
+        <div class="mini-panel">
+          <strong>Bottom-up</strong>
+          <span>EURACHEM / ISO GUM</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="category-section">
+        <div class="section-banner bio-gradient">
+            <div class="banner-content">
+                <h2>Top-down approach to measurement uncertainty</h2>
+                <p>Nordtest Report TR537 / SANTE 11312/2021</p>
+            </div>
+        </div>
+
+        <div class="cards-grid">            
+            <div class="card" onclick="location.href='adjust.html'">
+                <div class="icon"><img src="images/icon/SOP.png" width="50" height="50" alt="Statistics"></div>
+                <h3>Standard Operating Procedures</h3>
+                <p>มาตรฐานวิธีปฏิบัติงาน (SOP)</p>
+            </div>
+            <div class="card" onclick="location.href='validate.html'">
+                <div class="icon"><img src="images/icon/validate.png" width="50" height="50" alt="VALIDATE"></div>
+                <h3>Evaluate Validation Uncertainty</h3>
+                <p>ประเมินค่าความไม่แน่นอนจากข้อมูลการตรวจสอบความใช้ได้ของวิธี (Method Validation)</p>
+            </div>
+            <div class="card" onclick="location.href='pt.html'">
+                <div class="icon"><img src="images/icon/PT.png" width="50" height="50" alt="PT"></div>
+                <h3>Evaluate PT Uncertainty</h3>
+                <p>ประเมินค่าความไม่แน่นอนจากข้อมูลการทดสอบความชำนาญ (Proficiency Testing:PT)</p>
+            </div>
+            <div class="card" onclick="location.href='crm.html'">
+                <div class="icon"><img src="images/icon/crm.png" width="50" height="50" alt="CRM"></div>
+                <h3>Evaluate CRM Uncertainty</h3>
+                <p>ประเมินค่าความไม่แน่นอนจากข้อมูลการทดสอบวัสดุอ้างอิงรับรอง (Certified Reference Material:CRM)</p>
+            </div>         
+        </div>
+    </section>
+
+    <section class="category-section">
+        <div class="section-banner">
+            <div class="banner-content">
+                <h2>Bottom-up approach to uncertainty measurement</h2>
+                <p>EURACHEM / ISO GUM</p>
+            </div>
+        </div>
+        <div class="cards-grid">
+            <div class="card" onclick="location.href='adjust.html'">
+                <div class="icon"><img src="images/icon/SOP.png" width="50" height="50" alt="SOP"></div>
+                <h3>Standard Operating Procedures</h3>
+                <p>มาตรฐานวิธีปฏิบัติงาน (SOP)</p>
+            </div>
+            <!--<div class="card" onclick="location.href='pH.html'">
+                <div class="icon"><img src="images/icon/phmeter.png" width="50" height="50" alt="pH"></div>
+                <h3>pH Calculations</h3>
+                <p>การคำนวณความไม่แน่นอนสำหรับค่า pH</p>
+            </div>-->
+            <div class="card" onclick="location.href='Bottom-up.html'">
+                <div class="icon"><img src="images/icon/+-.png" width="50" height="50" alt="Uncertainty"></div>
+                <h3>Measurement Uncertainty</h3>
+                <p>การคำนวณค่าความไม่แน่นอนของการวัด</p>
+            </div>
+            <div class="card" onclick="location.href='add.html'">
+                <div class="icon"><img src="images/icon/add.png" width="50" height="50" alt="add chemicals"></div>
+                <h3>Add Chemicals, Equipment</h3>
+                <p>เพิ่มข้อมูลสารเคมี เครื่องมือ และเครื่องแก้ว</p>
+            </div>           
+        </div>        
+    </section>
+    
+    <section class="category-section history-section">
+      <div class="section-banner history-banner">
+        <div class="banner-content">
+          <h2>Calculation History</h2>
+          <p>ติดตามผลการคำนวณย้อนหลัง ตรวจสอบรายละเอียด และเปิดดูข้อมูลที่เคยบันทึกไว้</p>
+        </div>
+      </div>
+      <div class="history-card">
+        <div class="history-copy">
+          <div class="history-icon">
+            <img src="images/icon/history.png" width="34" height="34" alt="History">
+          </div>
+          <div>
+            <h3>History & Traceability</h3>
+            <p>รวมประวัติการคำนวณทั้งหมดจาก Top-down และ Bottom-up เพื่อให้ตรวจสอบย้อนหลังได้อย่างเป็นระบบ</p>
+          </div>
+        </div>
+        <a class="btn btn-history" href="history.html">เปิดประวัติการคำนวณ</a>
+      </div>
+    </section>
+</main>
+
+<footer>
+    <div class="footer-container">
+        <div class="footer-top">
+            <div class="footer-logo">National Institute of Reference Laboratories</div>        
+            <div class="footer-sub">สถาบันห้องปฏิบัติการอ้างอิงแห่งชาติ</div>
+        </div>
+        <div class="footer-divider"></div>
+        <div class="footer-bottom">
+            <div class="copyright">
+                &copy; 2026 AINSWERtainty. Developed by <span style="color: #3b82f6;">CRLC & BRLC</span>
+            </div>
+            <div class="visitor-wrapper">
+                <div class="visitor-pill">
+                    <div class="live-dot"></div>
+                    <span class="live-text">Live</span>
+                    <span class="views-count">Views: <span id="visitor-count">24</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- =========================================
+   HTML โครงสร้าง Popup Report a Problem (ซ่อนไว้เริ่มต้น)
+========================================= -->
+<div class="report-overlay" id="reportOverlay" hidden>
+  <div class="report-modal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="report-header">
+      <div>
+        <h2 class="report-title" id="reportTitle">Report a Problem</h2>
+        <p class="report-subtitle">แจ้งปัญหาการใช้งานระบบ</p>
+      </div>
+      <button type="button" class="report-close" id="closeReportModal" aria-label="Close">×</button>
+    </div>
+
+    <div id="statusBox" class="report-status" role="status" aria-live="polite"></div>
+
+    <form id="reportForm" novalidate>
+      <div class="report-form-group">
+        <label class="report-label" for="report-name">Name <span class="report-required">*</span></label>
+        <input class="report-input" type="text" id="report-name" name="name" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-email">Email <span class="report-required">*</span></label>
+        <input class="report-input" type="email" id="report-email" name="email" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-page">หน้าที่พบปัญหา <span class="report-required">*</span></label>
+        <input class="report-input" type="text" id="report-page" name="page" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-description">รายละเอียดปัญหา <span class="report-required">*</span></label>
+        <textarea class="report-textarea" id="report-description" name="description" required></textarea>
+      </div>
+
+      <div class="report-actions">
+        <button type="submit" id="submitBtn" class="report-btn report-btn-primary">Submit</button>
+        <button type="button" class="report-btn report-btn-secondary" id="cancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================================
+   JavaScript ทั้งหมด
+========================================= -->
+<script>
+// 1. ฟังก์ชัน นับยอด Visitor (ของคุณ)
+async function initVisitorCounter() {
+  const countEl = document.getElementById('visitor-count');
+  if (!countEl) return;
+  try {
+    const res = await fetch('https://api.counterapi.dev/v1/ainswertainty/history-index2/up');
+    const data = await res.json();
+    countEl.textContent = (data.count ?? data.data ?? 0).toLocaleString();
+  } catch (err) {
+    countEl.textContent = 'Online';
+    console.error('Counter load failed:', err);
+  }
+}
+document.addEventListener('DOMContentLoaded', initVisitorCounter);
+
+
+// 2. ฟังก์ชัน จัดการ Popup Report a Problem
+const CONFIG = {
+  scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+};
+
+const overlay = document.getElementById("reportOverlay");
+const form = document.getElementById("reportForm");
+const submitBtn = document.getElementById("submitBtn");
+const statusBox = document.getElementById("statusBox");
+const closeBtn = document.getElementById("closeReportModal");
+const cancelBtn = document.getElementById("cancelBtn");
+const reportProblemLink = document.getElementById("reportProblemLink");
+const pageInput = document.getElementById("report-page");
+
+function openReportModal() {
+  // ดึงที่อยู่หน้าที่ใช้อยู่มาใส่ให้อัตโนมัติ
+  pageInput.value = window.location.pathname || window.location.href;
+  overlay.hidden = false;
+}
+
+function closeReportModal() {
+  overlay.hidden = true;
+  form.reset();
+  clearStatus();
+}
+
+function showStatus(message, type) {
+  statusBox.className = `report-status show ${type}`;
+  statusBox.textContent = message;
+}
+
+function clearStatus() {
+  statusBox.className = "report-status";
+  statusBox.textContent = "";
+}
+
+function validateEmail(email) {
+  return /^\S+@\S+\.\S+$/.test(email);
+}
+
+// ผูกการคลิกเมนู Report a problem ให้เปิด Popup
+reportProblemLink.addEventListener("click", (e) => {
+  e.preventDefault(); // ไม่ให้มันวิ่งไปหน้าอื่น
+  openReportModal();
+});
+
+closeBtn.addEventListener("click", closeReportModal);
+cancelBtn.addEventListener("click", closeReportModal);
+
+// กดพื้นที่ว่างข้างนอก (overlay) เพื่อปิด Popup
+overlay.addEventListener("click", (e) => {
+  if (e.target === overlay) {
+    closeReportModal();
+  }
+});
+
+// กดปุ่ม ESC เพื่อปิด Popup
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !overlay.hidden) {
+    closeReportModal();
+  }
+});
+
+// จัดการตอนกดปุ่ม Submit Form
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearStatus();
+
+  const data = {
+    name: form.name.value.trim(),
+    email: form.email.value.trim(),
+    page: form.page.value.trim(),
+    description: form.description.value.trim(),
+    timestamp: new Date().toISOString()
+  };
+
+  if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
+  if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
+  if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
+  if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
+  if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
+
+    try {
+    // ส่งข้อมูลแบบ no-cors
+    await fetch(CONFIG.scriptUrl, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify(data)
+    });
+
+    // เนื่องจากโหมด no-cors จะอ่าน response.json() ไม่ได้ 
+    // เมื่อโค้ดทำงานมาถึงบรรทัดนี้ได้ (ไม่ติด catch) แสดงว่าส่งสำเร็จแล้ว
+    showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+    setTimeout(() => {
+      closeReportModal();
+    }, 1200);
+
+  } catch (error) {
+    // จะเด้งมาตรงนี้ก็ต่อเมื่อ เน็ตหลุด หรือ URL ผิดแบบรุนแรง เท่านั้น
+    showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit";
+  }
+});
+</script> 
+</body>
+</html>

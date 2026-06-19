@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AINSWERtainty - ระบบจัดการห้องปฏิบัติการ</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Cabin+Sketch:wght@400;700&family=Sriracha&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #f5f7fb;
+      --header-bg: rgba(255,255,255,.82);
+      --surface: #ffffff;
+      --surface-2: #eef3ff;
+      --logo-color: #475569;
+      --text-color: #172033;
+      --muted: #64748b;
+      --btn-primary: #183a8f;
+      --btn-hover: #2954c8;
+      --border: rgba(23, 32, 51, 0.08);
+      --header-height: 100px;
+      --footer-bg: #0f1120;
+      --footer-text: #e0e0e0;
+      --success-color: #28a745;
+      --shadow: 0 10px 30px rgba(23, 32, 51, 0.08);
+      --shadow-hover: 0 18px 42px rgba(24, 58, 143, 0.14);
+
+      --report-bg: #ffffff;
+      --report-surface-2: #f0f4f8;
+      --report-text: #1f2937;
+      --report-muted: #6b7280;
+      --report-border: #d1d5db;
+      --report-primary: #0f766e;
+      --report-primary-hover: #115e59;
+      --report-success-bg: #dcfce7;
+      --report-success-text: #166534;
+      --report-error-bg: #fce7f3;
+      --report-error-text: #9d174d;
+      --report-radius: 16px;
+      --report-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      color: var(--text-color);
+      background:
+        radial-gradient(circle at top right, rgba(41,84,200,.10), transparent 35%),
+        radial-gradient(circle at bottom left, rgba(31,138,76,.08), transparent 30%),
+        var(--bg-color);
+      font-family: 'Kanit', sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    /* Header */
+    header.top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: var(--header-height);
+      background: var(--header-bg);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 4px 24px rgba(0,0,0,.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 32px;
+      z-index: 1100;
+      border-bottom: 1px solid rgba(255,255,255,.65);
+    }
+
+    .logo-group h1 {
+      font-family: "Cabin Sketch", sans-serif;
+      font-size: 42px;
+      font-weight: bold;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .logo-group p {
+      font-family: 'Sriracha', cursive;
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--logo-color);
+      margin: 5px 0 0 0;
+      opacity: 0.9;
+      letter-spacing: 0.2px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    nav a {
+      position: relative;
+      font-size: 15px;
+      color: #334155;
+      font-weight: 400;
+      padding: 6px 0;
+    }
+
+    nav a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--btn-primary);
+      transition: width .25s ease;
+    }
+
+    nav a:hover::after {
+      width: 100%;
+    }
+
+    /* Main Content */
+    .main-content {
+      max-width: 1200px;
+      width: min(1200px, calc(100% - 32px));
+      margin: calc(var(--header-height) + 32px) auto 72px auto;
+    }
+
+    .form-container {
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(12px);
+      padding: 30px;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 40px;
+      border: 1px solid var(--border);
+    }
+
+    .config-badge {
+      display: inline-block;
+      padding: 6px 15px;
+      background: #eef2ff;
+      color: var(--btn-primary);
+      border-radius: 10px;
+      font-size: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #d0daff;
+      font-weight: 500;
+    }
+
+    h2 {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--btn-primary);
+      margin: 0 0 20px 0;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    input,
+    select {
+      padding: 12px 14px;
+      border: 1px solid #dbe2ea;
+      border-radius: 12px;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+      color: var(--text-color);
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--btn-primary);
+      box-shadow: 0 0 0 4px rgba(24, 58, 143, 0.10);
+    }
+
+    .btn-submit {
+      background-color: var(--btn-primary);
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 12px;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      font-size: 18px;
+      transition: all 0.3s;
+    }
+
+    .btn-submit:hover {
+      background-color: var(--btn-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(24,58,143,.16);
+    }
+
+    .btn-submit:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    footer {
+      width: 100%;
+      background: var(--footer-bg);
+      color: #ffffff;
+      padding: 10px 40px;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    .footer-top { margin-bottom: 2px; }
+
+    .footer-logo {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .footer-sub {
+      font-family: 'Sriracha', cursive;
+      font-size: 10px;
+      color: #a0a0b0;
+      margin-top: 10px;
+    }
+
+    .footer-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      margin: 6px auto;
+      max-width: 200px;
+    }
+
+    .footer-bottom {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 20px;
+    }
+
+    .copyright {
+      font-size: 9px;
+      color: #5c5c6d;
+      text-transform: uppercase;
+    }
+
+    .visitor-wrapper {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .visitor-pill {
+      background: rgba(0,0,0,0.4);
+      border-radius: 6px;
+      padding: 3px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      background-color: #3b82f6;
+      border-radius: 50%;
+    }
+
+    .live-text,
+    .views-count {
+      font-size: 9px;
+      color: #888;
+    }
+
+    .views-count {
+      border-left: 1px solid rgba(255,255,255,0.1);
+      padding-left: 6px;
+    }
+
+    #visitor-count {
+      color: #3b82f6;
+      font-weight: bold;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 15px 25px;
+      background: #333;
+      color: white;
+      border-radius: 10px;
+      display: none;
+      z-index: 2000;
+      font-size: 14px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Popup Report a Problem */
+    .report-overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 9999;
+    }
+
+    .report-overlay[hidden] {
+      display: none;
+    }
+
+    .report-modal {
+      width: min(100%, 560px);
+      background: var(--report-bg);
+      border: 1px solid var(--report-border);
+      border-radius: var(--report-radius);
+      box-shadow: var(--report-shadow);
+      padding: 24px;
+      text-align: left;
+      font-family: 'Kanit', sans-serif;
+    }
+
+    .report-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .report-title {
+      margin: 0 0 6px;
+      font-size: 24px;
+      line-height: 1.2;
+      color: var(--report-text);
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .report-subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: var(--report-muted);
+    }
+
+    .report-close {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--report-surface-2);
+      color: var(--report-text);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .report-form-group {
+      margin-bottom: 16px;
+    }
+
+    .report-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--report-text);
+    }
+
+    .report-required {
+      color: #dc2626;
+    }
+
+    .report-input,
+    .report-textarea {
+      width: 100%;
+      border: 1px solid var(--report-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--report-text);
+      background: #ffffff;
+      font-family: inherit;
+    }
+
+    .report-input:focus,
+    .report-textarea:focus {
+      outline: none;
+      border-color: var(--report-primary);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+    }
+
+    .report-textarea {
+      min-height: 130px;
+      resize: vertical;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .report-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .report-btn-primary {
+      background: var(--report-primary);
+      color: #ffffff;
+    }
+
+    .report-btn-primary:hover {
+      background: var(--report-primary-hover);
+    }
+
+    .report-btn-secondary {
+      background: var(--report-surface-2);
+      color: var(--report-text);
+    }
+
+    .report-status {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .report-status.show {
+      display: block;
+    }
+
+    .report-status.success {
+      background: var(--report-success-bg);
+      color: var(--report-success-text);
+    }
+
+    .report-status.error {
+      background: var(--report-error-bg);
+      color: var(--report-error-text);
+    }
+
+    @media (max-width: 768px) {
+      header.top-bar {
+        height: auto;
+        padding: 16px 18px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      nav {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+
+      .main-content {
+        width: min(100% - 20px, 1180px);
+        margin: calc(var(--header-height) + 20px) auto 48px;
+      }
+
+      h2 {
+        font-size: 22px;
+      }
+
+      .footer-bottom {
+        min-height: auto;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .visitor-wrapper {
+        position: static;
+        transform: none;
+        margin-top: 10px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .report-modal {
+        padding: 20px;
+        border-radius: 14px;
+      }
+
+      .report-actions {
+        flex-direction: column;
+      }
+
+      .report-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top-bar">
+ <div class="logo-group">
+    <a href="index.html" style="display: flex; align-items: center; gap: 12px;">
+      
+      <img 
+        src="images/logo5.png" 
+        alt="AINSWERtainty Logo" 
+        style="height: 42px; width: auto; object-fit: contain; display: block;"
+        onerror="this.style.display='none'; document.getElementById('logo-text-fallback').style.display='block';"
+      >
+      
+      <div id="logo-text-fallback" style="display: none; font-family: 'Cabin Sketch', sans-serif; font-size: 42px; font-weight: bold; color: #183a8f;">
+        AINSWERtainty
+      </div>
+
+      <div style="border-left: 1px solid rgba(23, 32, 51, 0.15); padding-left: 12px; margin-left: 4px;">
+        <p style="font-family: 'Sriracha', sans-serif; font-size: 11px; color: #475569; margin: 0; padding: 0; line-height: 1.2;">จัดการ Uncertainty อย่างชาญฉลาด</p>
+        <p style="font-family: 'Sriracha', sans-serif; font-size: 11px; color: #64748b; margin: 2px 0 0 0; padding: 0; line-height: 1.2;">มั่นใจทุกผลการทดสอบ</p>
+      </div>
+
+    </a>
+  </div>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#" id="reportProblemLink">Report a problem</a>
+  </nav>
+</header>
+
+<main class="main-content">
+  <div class="form-container">
+    <div class="config-badge">📡 Multi-Sheet Sync Active</div>
+    <h2>ระบบจัดการข้อมูลเครื่องมือและสารเคมี</h2>
+
+    <div class="input-grid">
+      <div class="input-group">
+        <label>เลือกประเภทที่ต้องการเพิ่ม</label>
+        <select id="categorySelect" onchange="toggleFields()">
+          <option value="instrument">เครื่องมือ (Instrument/Equipment)</option>
+          <option value="glassware">เครื่องแก้ว (Glassware)</option>
+          <option value="chemical">สารเคมี (Chemical)</option>
+          <option value="autopipette">Autopipette / Micropipette</option>
+        </select>
+      </div>
+    </div>
+
+    <form id="mainForm">
+      <div class="input-grid">
+        <div class="input-group">
+          <label id="labelId">ID No. / Lot No.</label>
+          <input type="text" id="idInput" placeholder="รหัสอ้างอิง" required>
+        </div>
+
+        <div class="input-group" style="grid-column: span 2;">
+          <label>ชื่อรายการ / รายละเอียด (พิมพ์เองหรือเลือกจากรายการ)</label>
+          <input type="text" id="nameInput" list="nameSuggestions" placeholder="ชื่ออุปกรณ์ หรือ ชื่อสารเคมี" required>
+          <datalist id="nameSuggestions"></datalist>
+        </div>
+      </div>
+
+      <div id="fieldsInstrument" class="input-grid">
+        <div class="input-group">
+          <label>Accuracy / Linearity (±)</label>
+          <input type="number" step="0.000001" id="instAcc" placeholder="ความแม่นยำ">
+        </div>
+        <div class="input-group">
+          <label>Resolution</label>
+          <input type="number" step="0.000001" id="instRes" placeholder="ความละเอียด">
+        </div>
+        <div class="input-group">
+          <label>หน่วย (Unit)</label>
+          <input type="text" id="instUnit" list="unitSuggestions" placeholder="เลือกหรือพิมพ์หน่วย เช่น g, °C">
+          
+          <datalist id="unitSuggestions">
+            <option value="g"></option>
+            <option value="mg"></option>
+            <option value="°C"></option>
+            <option value="pH unit"></option>            
+            <option value="NTU"></option>
+            <option value="mS/cm"></option>
+            <option value="µS/cm"></option>
+          </datalist>
+        </div>
+      </div>
+
+      <div id="fieldsGlassware" class="input-grid" style="display:none;">
+        <div class="input-group">
+          <label>Model / Brand</label>
+          <input type="text" id="modelInput" placeholder="ยี่ห้อ">
+        </div>
+        <div class="input-group">
+          <label>Capacity</label>
+          <input type="number" step="0.000001" id="glassCap" placeholder="ความจุ">
+        </div>
+        <div class="input-group">
+          <label>Tolerance (±)</label>
+          <input type="number" step="0.000001" id="glassTol" placeholder="ค่าความคลาดเคลื่อน">
+        </div>
+        <div class="input-group">
+          <label>Uncertainty (±)</label>
+          <input type="number" step="0.000001" id="glassUnc" placeholder="ค่าความไม่แน่นอน">
+        </div>
+        <div class="input-group">
+          <label>หน่วย (Unit)</label>
+          <input type="text" id="glassUnit" placeholder="ml / L" value="">
+        </div>
+      </div>
+
+      <div id="fieldsChemical" class="input-grid" style="display:none;">
+        <div class="input-group">
+          <label>Concentration</label>
+          <input type="text" id="chemConc" placeholder="ความเข้มข้น">
+        </div>
+        <div class="input-group">
+          <label>หน่วย (Unit)</label>
+          <input type="text" id="chemUnit" placeholder="เช่น mg/L, %">
+        </div>
+        <div class="input-group">
+          <label>Uncertainty (U)</label>
+          <input type="number" step="0.000001" id="chemUnc" placeholder="ค่าความไม่แน่นอน">
+        </div>
+        <div class="input-group">
+          <label>Coverage Factor (k)</label>
+          <input type="number" step="0.001" id="chemK" placeholder="เช่น 2.00" value="2">
+        </div>
+        <div class="input-group">
+          <label>Expiry Date</label>
+          <input type="date" id="chemExp">
+        </div>
+      </div>
+
+      <div id="fieldsAutopipette" class="input-grid" style="display:none;">
+        <div class="input-group">
+          <label>Model / Brand</label>
+          <input type="text" id="autoBrand" placeholder="ยี่ห้อ">
+        </div>
+        <div class="input-group">
+          <label>Capacity</label>
+          <input type="number" step="0.000001" id="autoCap" placeholder="ความจุ">
+        </div>
+        <div class="input-group">
+          <label>Systematic error (±)</label>
+          <input type="number" step="0.000001" id="autoSyst" placeholder="ค่าความคลาดเคลื่อนระบบ">
+        </div>
+        <div class="input-group">
+          <label>หน่วย (Unit)</label>
+          <input type="text" id="autoUnit" placeholder="ul / ml">
+        </div>
+      </div>
+
+      <div class="input-grid">
+        <div class="input-group" style="grid-column: span 3;">
+          <label>หมายเหตุ (Remarks)</label>
+          <input type="text" id="noteInput" placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)">
+        </div>
+      </div>
+
+      <button type="submit" id="mainSubmitBtn" class="btn-submit">บันทึกข้อมูลและส่งไปยัง Google Sheet</button>
+    </form>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<footer>
+  <div class="footer-container">
+    <div class="footer-top">
+      <div class="footer-logo">National Institute of Reference Laboratories</div>
+      <div class="footer-sub">สถาบันห้องปฏิบัติการอ้างอิงแห่งชาติ</div>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-bottom">
+      <div class="copyright">
+        &copy; 2026 AINSWERtainty. Developed by <span style="color: #3b82f6;">CRLC & BRLC</span>
+      </div>
+      <div class="visitor-wrapper">
+        <div class="visitor-pill">
+          <div class="live-dot"></div>
+          <span class="live-text">Live</span>
+          <span class="views-count">Views: <span id="visitor-count">24</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="report-overlay" id="reportOverlay" hidden>
+  <div class="report-modal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="report-header">
+      <div>
+        <h2 class="report-title" id="reportTitle">Report a Problem</h2>
+        <p class="report-subtitle">แจ้งปัญหาการใช้งานระบบ</p>
+      </div>
+      <button type="button" class="report-close" id="closeReportModal" aria-label="Close">×</button>
+    </div>
+
+    <div id="statusBox" class="report-status" role="status" aria-live="polite"></div>
+
+    <form id="reportForm" novalidate>
+      <div class="report-form-group">
+        <label class="report-label" for="report-name">Name <span class="report-required">*</span></label>
+        <input class="report-input" type="text" id="report-name" name="name" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-email">Email <span class="report-required">*</span></label>
+        <input class="report-input" type="email" id="report-email" name="email" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-page">หน้าที่พบปัญหา <span class="report-required">*</span></label>
+        <input class="report-input" type="text" id="report-page" name="page" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-description">รายละเอียดปัญหา <span class="report-required">*</span></label>
+        <textarea class="report-textarea" id="report-description" name="description" required></textarea>
+      </div>
+
+      <div class="report-actions">
+        <button type="submit" id="reportSubmitBtn" class="report-btn report-btn-primary">Submit</button>
+        <button type="button" class="report-btn report-btn-secondary" id="cancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const SHEET_URLS = {
+    chemical: "https://script.google.com/macros/s/AKfycbwsGhP991w7pEcMnPI_5HFmNk3QU9fFA9_jZw0RRplUXjuS2SQD5OEFicfFmS-if42u5A/exec",
+    instrument: "https://script.google.com/macros/s/AKfycbxsOLcZ1FHTu3hJWZJ0DlLgKZxQoolytBZBlA31EX4yDSPJopCzBmoA1Ihi4KoIi6yM/exec",
+    glassware: "https://script.google.com/macros/s/AKfycbxaDq0H2qvQXvV-VP1tYygTaWWBJayCGs8iaRc_CybS1aL8blQHJPPzzgkAInQ_OV_FRQ/exec",
+    autopipette: "https://script.google.com/macros/s/AKfycbwDxE5pMV7taNHLM22fjc_sjPBXawIqphkGdEw6a_ndUpUPp1OoGneTqgg1B51F4fgSkg/exec"
+  };
+
+  const CONFIG = {
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+  };
+
+  const categorySelect = document.getElementById('categorySelect');
+  const mainForm = document.getElementById('mainForm');
+  const mainSubmitBtn = document.getElementById('mainSubmitBtn');
+  const nameSuggestions = document.getElementById('nameSuggestions');
+
+  let items = [];
+  try {
+    items = JSON.parse(localStorage.getItem('lab_data_v9')) || [];
+  } catch (e) {
+    items = [];
+  }
+
+  function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+    toast.innerText = message;
+    toast.style.background = isError ? '#dc3545' : '#28a745';
+    toast.style.display = 'block';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 3000);
+  }
+
+  async function fetchSuggestions() {
+    const cat = categorySelect.value;
+    const url = SHEET_URLS[cat];
+    nameSuggestions.innerHTML = '';
+
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        const uniqueNames = [...new Set(
+          data.map(item =>
+            item.name ||
+            item.chem_name ||
+            item.instrument_name ||
+            item.glassware_name ||
+            item.autopipette_name ||
+            item.chem_input ||
+            item.instrument_input ||
+            item.glassware_input ||
+            ""
+          )
+        )].filter(name => name !== "");
+
+        uniqueNames.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          nameSuggestions.appendChild(option);
+        });
+      } else {
+        const localNames = [...new Set(items.filter(i => i.category === cat).map(i => i.name))];
+        localNames.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          nameSuggestions.appendChild(option);
+        });
+      }
+    } catch (e) {
+      console.log("Suggestions fetch skipped or failed.");
+      const localNames = [...new Set(items.filter(i => i.category === cat).map(i => i.name))];
+      localNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        nameSuggestions.appendChild(option);
+      });
+    }
+  }
+
+  function toggleFields() {
+    const cat = categorySelect.value;
+    document.getElementById('fieldsInstrument').style.display = (cat === 'instrument') ? 'grid' : 'none';
+    document.getElementById('fieldsGlassware').style.display = (cat === 'glassware') ? 'grid' : 'none';
+    document.getElementById('fieldsChemical').style.display = (cat === 'chemical') ? 'grid' : 'none';
+    document.getElementById('fieldsAutopipette').style.display = (cat === 'autopipette') ? 'grid' : 'none';
+
+    const labelId = document.getElementById('labelId');
+    labelId.innerText = (cat === 'chemical') ? 'Lot No.' : 'ID No.';
+
+    fetchSuggestions();
+  }
+
+  async function sendToGoogleSheet(data, category) {
+    const url = SHEET_URLS[category];
+    if (!url) return false;
+
+    try {
+      mainSubmitBtn.disabled = true;
+      mainSubmitBtn.innerText = "กำลังซิงค์ข้อมูล...";
+
+      await fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-cache',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(data)
+      });
+
+      showToast('ส่งข้อมูลสำเร็จ');
+      return true;
+    } catch (error) {
+      showToast("ส่งข้อมูลไม่สำเร็จ", true);
+      return false;
+    } finally {
+      mainSubmitBtn.disabled = false;
+      mainSubmitBtn.innerText = "บันทึกข้อมูลและส่งไปยัง Google Sheet";
+    }
+  }
+
+  mainForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cat = categorySelect.value;
+    const nameValue = document.getElementById('nameInput').value;
+
+    const newItem = {
+      category: cat,
+      id: document.getElementById('idInput').value,
+      lot: document.getElementById('idInput').value,
+      instrument_name: nameValue,
+      chem_name: nameValue,
+      glassware_name: nameValue,
+      autopipette_name: nameValue,
+      name: nameValue,
+      note: document.getElementById('noteInput').value,
+      timestamp: new Date().toLocaleString()
+    };
+
+    if (cat === 'instrument') {
+      newItem.accuracy = document.getElementById('instAcc').value;
+      newItem.resolution = document.getElementById('instRes').value;
+      newItem.unit = document.getElementById('instUnit').value;
+    } else if (cat === 'glassware') {
+      newItem.tolerance = document.getElementById('glassTol').value;
+      newItem.capacity = document.getElementById('glassCap').value;
+      newItem.unit = document.getElementById('glassUnit').value;
+      newItem.uncertainty = document.getElementById('glassUnc').value;
+      newItem.model = document.getElementById('modelInput').value;
+    } else if (cat === 'chemical') {
+      newItem.concentration = document.getElementById('chemConc').value;
+      newItem.unit = document.getElementById('chemUnit').value;
+      newItem.uncertainty = document.getElementById('chemUnc').value;
+      newItem.k_factor = document.getElementById('chemK').value;
+      newItem.expiryDate = document.getElementById('chemExp').value;
+    } else if (cat === 'autopipette') {
+      newItem.brand = document.getElementById('autoBrand').value;
+      newItem.capacity = document.getElementById('autoCap').value;
+      newItem.systematic = document.getElementById('autoSyst').value;
+      newItem.unit = document.getElementById('autoUnit').value;
+    }
+
+    await sendToGoogleSheet(newItem, cat);
+    mainForm.reset();
+
+    if (cat === 'chemical') {
+      document.getElementById('chemK').value = '2';
+    }
+
+    fetchSuggestions();
+    toggleFields();
+  });
+
+  async function initVisitorCounter() {
+    const countEl = document.getElementById('visitor-count');
+    if (!countEl) return;
+
+    try {
+      const res = await fetch('https://api.counterapi.dev/v1/ainswertainty/history-index-v1/up');
+      const data = await res.json();
+      countEl.textContent = (data.count ?? data.data ?? 0).toLocaleString();
+    } catch (err) {
+      countEl.textContent = 'Online';
+      console.error('Counter load failed:', err);
+    }
+  }
+
+  const overlay = document.getElementById("reportOverlay");
+  const reportForm = document.getElementById("reportForm");
+  const reportSubmitBtn = document.getElementById("reportSubmitBtn");
+  const statusBox = document.getElementById("statusBox");
+  const closeBtn = document.getElementById("closeReportModal");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const reportProblemLink = document.getElementById("reportProblemLink");
+  const pageInput = document.getElementById("report-page");
+  const firstReportField = document.getElementById("report-name");
+
+  let lastFocusedElement = null;
+
+  function openReportModal() {
+    lastFocusedElement = document.activeElement;
+    pageInput.value = window.location.pathname || window.location.href;
+    overlay.hidden = false;
+    clearStatus();
+    setTimeout(() => firstReportField.focus(), 0);
+  }
+
+  function closeReportModal() {
+    overlay.hidden = true;
+    reportForm.reset();
+    clearStatus();
+    if (lastFocusedElement) {
+      lastFocusedElement.focus();
+    }
+  }
+
+  function showStatus(message, type) {
+    statusBox.className = `report-status show ${type}`;
+    statusBox.textContent = message;
+  }
+
+  function clearStatus() {
+    statusBox.className = "report-status";
+    statusBox.textContent = "";
+  }
+
+  function validateEmail(email) {
+    return /^\S+@\S+\.\S+$/.test(email);
+  }
+
+  reportProblemLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    openReportModal();
+  });
+
+  closeBtn.addEventListener("click", closeReportModal);
+  cancelBtn.addEventListener("click", closeReportModal);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) {
+      closeReportModal();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay.hidden) {
+      closeReportModal();
+    }
+  });
+
+  reportForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearStatus();
+
+    const data = {
+      name: reportForm.name.value.trim(),
+      email: reportForm.email.value.trim(),
+      page: reportForm.page.value.trim(),
+      description: reportForm.description.value.trim(),
+      timestamp: new Date().toISOString()
+    };
+
+    if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
+    if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
+    if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
+    if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
+    if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+
+    reportSubmitBtn.disabled = true;
+    reportSubmitBtn.textContent = "Submitting...";
+
+    try {
+      await fetch(CONFIG.scriptUrl, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify(data)
+      });
+
+      showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+      setTimeout(() => {
+        closeReportModal();
+      }, 1200);
+    } catch (error) {
+      showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
+    } finally {
+      reportSubmitBtn.disabled = false;
+      reportSubmitBtn.textContent = "Submit";
+    }
+  });
+
+  window.addEventListener('load', () => {
+    fetchSuggestions();
+    toggleFields();
+    initVisitorCounter();
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AINSWERtainty - ระบบสมาชิก</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Kanit:wght@400;500;600;700&family=Sriracha&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg-color: #fcfcfd; 
+            --btn-primary: #150099;
+            --btn-hover: #2a1ce0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Kanit', 'Inter', sans-serif;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 1. กล่องคอนเทนเนอร์หลัก: ปรับ Padding เพื่อให้กลุ่มเนื้อหาขยายระยะแนวตั้ง */
+        .landing-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 20px; /* เพิ่มระยะ Padding บน-ล่าง */
+            z-index: 10;
+            max-width: 95vw;
+            margin: 0 auto;
+            height: 100vh;
+        }
+
+        /* 2. กล่องควบคุมโลโก้: ลดการติดลบลง เพื่อไม่ให้ตัวหนังสือด้านล่างวิ่งขึ้นไปทับรูป */
+        .logo-container {
+            line-height: 1;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px; /* 📌 เปลี่ยนจากติดลบ (-80px) ให้กลายเป็นบวก 20px เพื่อผลักข้อความลงไปด้านล่างรูปภาพ */
+            position: relative;
+            z-index: 5;
+        }
+
+        .logo-image {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            display: block;
+        }
+
+         /* 3. ข้อความย่อย: เพิ่มระยะห่างด้านบนและด้านล่างให้สมดุล */
+        .subtitle {
+            font-family: 'Sriracha', cursive;
+            font-size: clamp(16px, 2.5vw, 24px);
+            color: #675A14;
+            opacity: 0.9;
+            margin-top: 20px;    /* 📌 เพิ่ม margin-top เพื่อไม่ให้ชิดขอบตัวหนังสือโลโก้เกินไป */
+            margin-bottom: 50px; /* 📌 เพิ่ม margin-bottom เป็น 50px เพื่อดันปุ่มลงไปด้านล่าง ไม่ให้เบียดข้อความ */
+            position: relative;
+            z-index: 20;
+        }
+
+        .btn-login-main {
+            position: relative;
+            z-index: 30;
+            pointer-events: auto;
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--btn-primary);
+            color: #ffffff;
+            padding: 14px 60px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 0px #0a0055, 0 20px 30px -10px rgba(21, 0, 153, 0.3);
+        }
+
+        .btn-login-main:hover {
+            background-color: var(--btn-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 0px #0a0055, 0 25px 40px -10px rgba(21, 0, 153, 0.4);
+        }
+
+        .btn-login-main:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 0px #0a0055, 0 15px 20px -10px rgba(21, 0, 153, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="toast-box" class="fixed top-6 right-6 z-[100] p-4 rounded-2xl shadow-2xl hidden flex items-center gap-3 transition-all duration-300">
+        <span id="toast-text" class="font-bold text-sm"></span>
+        <button onclick="closeToast()" class="ml-2 font-black hover:opacity-70">×</button>
+    </div>
+
+    <div id="view-landing" class="landing-container">
+        <div class="logo-container">
+            <img src="/images/logo5.png" alt="AINSWERtainty Logo" class="logo-image">
+        </div>
+        <div class="subtitle">จัดการ Uncertainty อย่างชาญฉลาด มั่นใจทุกผลการทดสอบ</div>  
+        <button onclick="switchView('auth')" class="btn-login-main">เข้าสู่ระบบสมาชิก</button>
+    </div>
+
+    <div id="view-auth" class="hidden fixed inset-0 flex items-center justify-center p-4 z-10">
+        <div class="w-full max-w-md p-8 rounded-[2.5rem] bg-white/40 backdrop-blur-xl border border-white/20 shadow-[0_25px_50px_-12px_rgba(21,0,153,0.15)] relative">
+            
+            <div id="auth-loading" class="hidden absolute inset-0 bg-white/60 backdrop-blur-sm rounded-[2.5rem] flex items-center justify-center z-50">
+                <div class="w-12 h-12 border-4 border-[#150099] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 id="auth-title" class="text-2xl font-extrabold bg-gradient-to-r from-[#150099] to-blue-600 bg-clip-text text-transparent tracking-tight">เข้าสู่ระบบ</h2>
+                    <p id="auth-subtitle" class="text-xs text-gray-500 mt-1">กรุณาตรวจสอบสิทธิ์เพื่อเข้าใช้งานระบบ</p>
+                </div>
+                <button onclick="switchView('landing')" class="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="12" y2="12"></line><path d="M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div id="register-fields" class="hidden space-y-4">
+                    <div class="flex items-center bg-white/80 p-4 rounded-2xl border border-gray-100 focus-within:border-[#150099]/50 shadow-sm">
+                        <input id="reg-name" class="bg-transparent outline-none w-full text-gray-800 text-sm font-medium" placeholder="ชื่อเรียกของคุณ" />
+                    </div>
+                    <div class="flex items-center bg-white/80 p-4 rounded-2xl border border-gray-100 focus-within:border-[#150099]/50 shadow-sm">
+                        <input id="reg-dept" class="bg-transparent outline-none w-full text-gray-800 text-sm font-medium" placeholder="กลุ่มงาน / สถาบัน" />
+                    </div>
+                </div>
+
+                <div class="flex items-center bg-white/80 p-4 rounded-2xl border border-gray-100 focus-within:border-[#150099]/50 shadow-sm">
+                    <input id="auth-email" type="email" class="bg-transparent outline-none w-full text-gray-800 text-sm font-medium" placeholder="@dss.go.th" required />
+                </div>
+                <div class="flex items-center bg-white/80 p-4 rounded-2xl border border-gray-100 focus-within:border-[#150099]/50 shadow-sm">
+                    <input id="auth-password" type="password" class="bg-transparent outline-none w-full text-gray-800 text-sm font-medium" placeholder="รหัสผ่านอย่างน้อย 6 ตัว" required />
+                </div>
+
+                <button type="submit" id="btn-submit-text" class="w-full bg-gradient-to-r from-[#150099] to-blue-700 text-white py-4 rounded-2xl font-bold shadow-md active:scale-[0.98] transition-all mt-6">
+                    ตรวจสอบสิทธิ์และเข้าใช้งาน
+                </button>
+            </form>
+
+            <p class="mt-8 text-center text-sm text-gray-500 font-medium">
+                <span id="toggle-msg-text">ยังไม่มีบัญชีสมาชิก?</span>
+                <button onclick="toggleAuthMode()" id="btn-toggle-mode" class="text-[#150099] font-extrabold hover:text-blue-600 ml-2 underline">
+                    สมัครใช้งานที่นี่
+                </button>
+            </p>
+        </div>
+    </div>
+
+    <div id="view-home" class="hidden fixed inset-0 flex items-center justify-center p-4 z-10">
+        <div class="w-full max-w-4xl px-4">
+            <div class="bg-white/40 backdrop-blur-xl border border-white/30 p-5 rounded-[2rem] mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-lg">
+                <div class="flex items-center gap-4 w-full">
+                    <div id="user-avatar" class="w-14 h-14 bg-gradient-to-tr from-[#150099] to-cyan-400 text-white rounded-2xl flex items-center justify-center font-bold text-xl shadow-md">U</div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <p class="text-xs text-gray-500 font-semibold uppercase">ระบบบริการบุคลากร วศ.</p>
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                        </div>
+                        <p id="user-display-name" class="font-extrabold text-xl text-gray-800 tracking-tight">ผู้ใช้งาน</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="p-3.5 bg-red-50 text-red-600 border border-red-100 rounded-2xl hover:bg-red-500 hover:text-white transition-all">
+                    ออกจากระบบ
+                </button>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white/90 p-8 rounded-[2.5rem] shadow-md border border-gray-100 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-extrabold text-gray-800 mb-2">Uncertainty Dashboard</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed mb-8">
+                            เข้าสู่ระบบคำนวณและบันทึกประมวลผลค่าความไม่แน่นอนในการวัดตามเกณฑ์มาตรฐานสากล ISO/IEC 17025 ของกองสอบเทียบ
+                        </p>
+                    </div>
+                    <a href="index.html" class="block w-full">
+                        <button class="w-full bg-gradient-to-r from-[#150099] to-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-md">
+                            เริ่มใช้งานเครื่องมือ
+                        </button>
+                    </a>
+                </div>
+
+                <div class="bg-gradient-to-br from-[#120080] to-blue-700 p-8 rounded-[2.5rem] text-white flex flex-col justify-between h-80 shadow-lg">
+                    <div>
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-lg font-bold text-white/80">สิทธิ์การเข้าใช้งาน</h3>
+                            <div id="user-status" class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Active</div>
+                        </div>
+                        <div class="bg-white/10 p-5 rounded-2xl backdrop-blur-md border border-white/10">
+                            <p class="text-xs text-white/60 mb-1.5">กลุ่มงาน / ศูนย์วิจัยที่สังกัด</p>
+                            <p id="user-dept-display" class="font-extrabold text-xl text-white">ไม่ระบุสังกัด</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwnO1ppVi5JuC1roSq3VdbzjQ-1z3Jt773eQitnUJNPmHJKiWgIWeU-8usLW5cjCIo/exec";
+        let currentMode = 'login'; // 'login' หรือ 'register'
+
+        // เช็คการจำลอง Session เมื่อเปิดเว็บบอร์ด
+        window.onload = function() {
+            const cachedUser = localStorage.getItem("ainswertainty_user");
+            const cachedUserData = localStorage.getItem("ainswertainty_userdata");
+            if (cachedUser && cachedUserData) {
+                updateDashboardUI(JSON.parse(cachedUser), JSON.parse(cachedUserData));
+                switchView('home');
+            } else {
+                switchView('landing');
+            }
+            initCanvas();
+        };
+
+        function switchView(viewName) {
+            document.getElementById('view-landing').classList.add('hidden');
+            document.getElementById('view-auth').classList.add('hidden');
+            document.getElementById('view-home').classList.add('hidden');
+            
+            if(viewName === 'landing') document.getElementById('view-landing').classList.remove('hidden');
+            if(viewName === 'auth') document.getElementById('view-auth').classList.remove('hidden');
+            if(viewName === 'home') document.getElementById('view-home').classList.remove('hidden');
+        }
+
+        function toggleAuthMode() {
+            if (currentMode === 'login') {
+                currentMode = 'register';
+                document.getElementById('auth-title').innerText = 'ลงทะเบียนผู้ใช้ใหม่';
+                document.getElementById('auth-subtitle').innerText = 'กรอกข้อมูลเพื่อขออนุมัติสิทธิ์การเข้าใช้งาน';
+                document.getElementById('register-fields').classList.remove('hidden');
+                document.getElementById('btn-submit-text').innerText = 'ส่งข้อมูลเพื่อรออนุมัติสิทธิ์';
+                document.getElementById('toggle-msg-text').innerText = 'มีบัญชีอยู่ในระบบแล้ว?';
+                document.getElementById('btn-toggle-mode').innerText = 'เข้าสู่ระบบ';
+            } else {
+                currentMode = 'login';
+                document.getElementById('auth-title').innerText = 'เข้าสู่ระบบ';
+                document.getElementById('auth-subtitle').innerText = 'กรุณาตรวจสอบสิทธิ์เพื่อเข้าใช้งานระบบ';
+                document.getElementById('register-fields').classList.add('hidden');
+                document.getElementById('btn-submit-text').innerText = 'ตรวจสอบสิทธิ์และเข้าใช้งาน';
+                document.getElementById('toggle-msg-text').innerText = 'ยังไม่มีบัญชีสมาชิก?';
+                document.getElementById('btn-toggle-mode').innerText = 'สมัครใช้งานที่นี่';
+            }
+        }
+
+        function showToast(type, text) {
+            const toast = document.getElementById('toast-box');
+            const toastText = document.getElementById('toast-text');
+            toastText.innerText = text;
+            toast.className = `fixed top-6 right-6 z-[100] p-4 rounded-2xl shadow-2xl flex items-center gap-3 ${type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`;
+            setTimeout(closeToast, 5000);
+        }
+
+        function closeToast() {
+            document.getElementById('toast-box').classList.add('hidden');
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const displayName = document.getElementById('reg-name').value;
+            const department = document.getElementById('reg-dept').value;
+
+            if (!email.endsWith('@dss.go.th') && !email.endsWith('@mail.dss.go.th')) {
+                showToast('error', 'ระบบจำกัดสิทธิ์เฉพาะอีเมล วศ. (@dss.go.th) เท่านั้น');
+                return;
+            }
+            if (currentMode === 'register' && password.length < 6) {
+                showToast('error', 'กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษรขึ้นไป');
+                return;
+            }
+
+            document.getElementById('auth-loading').classList.remove('hidden');
+
+            try {
+                const payload = {
+                    action: currentMode,
+                    email, password, displayName, department
+                };
+
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (currentMode === 'register') {
+                        showToast('success', result.message);
+                        toggleAuthMode();
+                    } else {
+                        localStorage.setItem("ainswertainty_user", JSON.stringify(result.user));
+                        localStorage.setItem("ainswertainty_userdata", JSON.stringify(result.userData));
+                        updateDashboardUI(result.user, result.userData);
+                        showToast('success', 'เข้าสู่ระบบสำเร็จ ยินดีต้อนรับสู่ AINSWERtainty');
+                        switchView('home');
+                    }
+                } else {
+                    showToast('error', result.message);
+                }
+            } catch (err) {
+                showToast('error', 'ระบบเครือข่ายขัดข้อง หรือ URL ระบบหลังบ้านไม่ถูกต้อง');
+            } finally {
+                document.getElementById('auth-loading').classList.add('hidden');
+            }
+        }
+
+        function updateDashboardUI(user, userData) {
+            document.getElementById('user-display-name').innerText = user.displayName || 'ผู้ใช้งาน';
+            document.getElementById('user-dept-display').innerText = userData.department || 'ไม่ระบุสังกัด';
+            document.getElementById('user-status').innerText = userData.status || 'Active';
+            document.getElementById('user-avatar').innerText = (user.displayName ? user.displayName[0] : 'U').toUpperCase();
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("ainswertainty_user");
+            localStorage.removeItem("ainswertainty_userdata");
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
+            switchView('landing');
+            showToast('success', 'ออกจากระบบเรียบร้อยแล้ว');
+        }
+
+        // ==========================================
+        // CANVAS ANIMATION
+        // ==========================================
+        function initCanvas() {
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const particleCount = 35;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Particle {
+                constructor() { this.init(); }
+                init() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * 0.4;
+                    this.vy = (Math.random() - 0.5) * 0.4;
+                    this.size = Math.random() * 1.5 + 1;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if(this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                    if(this.y < 0 || this.y > canvas.height) this.vy *= -1;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                    ctx.fillStyle = 'rgba(21, 0, 153, 0.12)';
+                    ctx.fill();
+                }
+            }
+
+            function loop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i+1; j<particles.length; j++) {
+                        const d = Math.hypot(particles[i].x-particles[j].x, particles[i].y-particles[j].y);
+                        if(d < 160) {
+                            ctx.strokeStyle = `rgba(21, 0, 153, ${0.08 * (1-d/160)})`;
+                            ctx.lineWidth = 0.8;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(loop);
+            }
+            particles = Array.from({length: particleCount}, () => new Particle());
+            loop();
+        }
+    </script>
+</body>
+</html>

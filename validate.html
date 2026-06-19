@@ -1,0 +1,2911 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AINSWERtainty - Uncertainty Module</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">    
+    <link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@400;700&family=Kanit:wght@300;400;600&family=Montserrat:wght@700&family=Sarabun:wght@300;400;600&family=Sriracha&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+    :root {
+        --sidebar-width: 280px;
+        --primary-blue: #1e40af;
+
+        /* Report a Problem */
+        --report-bg: #ffffff;
+        --report-surface-2: #f0f4f8;
+        --report-text: #1f2937;
+        --report-muted: #6b7280;
+        --report-border: #d1d5db;
+        --report-primary: #0f766e;
+        --report-primary-hover: #115e59;
+        --report-success-bg: #dcfce7;
+        --report-success-text: #166534;
+        --report-error-bg: #fce7f3;
+        --report-error-text: #9d174d;
+        --report-radius: 16px;
+        --report-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+    }
+
+    body {
+        font-family: 'Kanit', sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+    }
+
+    /* --- Sidebar Styling --- */
+    aside.sidebar {
+        width: var(--sidebar-width);
+        height: 100vh;
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        position: fixed;
+        left: 0;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        z-index: 1200;
+        transition: transform 0.3s ease;
+        text-align: center;
+    }
+
+    .sidebar-header {
+        padding: 25px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .sidebar-logo {
+        font-family: "Cabin Sketch", sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        text-decoration: none;
+    }    
+
+    .sidebar-content {
+        flex: 1;
+        padding: 20px 15px;
+        overflow-y: auto;
+        text-align: left;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 15px;
+        color: #64748b;
+        cursor: pointer;
+        border-radius: 12px;
+        margin-bottom: 5px;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .nav-item:hover {
+        background: #f1f5f9;
+        color: var(--primary-blue);
+    }
+
+    .nav-item.active {
+        background: #eff6ff;
+        color: var(--primary-blue);
+    }
+
+    /* --- Main Content Area --- */
+    main.content-area {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+        padding: 30px 40px;
+        transition: margin-left 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .container-custom {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .glass-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        border: 1px solid #f1f5f9;
+        width: 100%;
+    }
+
+    .input-field {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .input-field:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .hidden-page {
+        display: none;
+    }
+
+    @media (max-width: 1024px) {
+        main.content-area {
+            margin-left: 0;
+            padding: 80px 20px 40px;
+        }
+    }
+
+    .formula-card {
+        background: white;
+        border: 1px solid #f1f5f9;
+        padding: 25px;
+        border-radius: 20px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        height: 100%;
+    }
+
+    .formula-card:hover {
+        box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
+        border-color: #3b82f6;
+    }
+
+    .math-box {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .input {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    /* สไตล์สำหรับ Modal Report PDF เดิม */
+    .modal-overlay {
+        background-color: rgba(15, 23, 42, 0.8);
+        backdrop-blur: 8px;
+    }
+
+    /* =========================================
+       CSS ของ Popup Report a Problem
+    ========================================= */    
+    .report-overlay {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 9999;
+    }
+
+    .report-overlay[hidden] {
+        display: none;
+    }
+
+    .report-modal {
+        width: min(100%, 580px);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 22px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+        padding: 26px;
+        font-family: 'Kanit', sans-serif;
+        text-align: left;
+    }
+
+    .report-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .report-title {
+        margin: 0 0 4px;
+        font-size: 24px;
+        line-height: 1.2;
+        color: #0f172a;
+        font-family: 'Montserrat', 'Kanit', sans-serif;
+        font-weight: 700;
+    }
+
+    .report-subtitle {
+        margin: 0;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .report-close {
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #1f2937;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .report-close:hover {
+        background: #e2e8f0;
+        transform: scale(1.03);
+    }
+
+    .report-form-group {
+        margin-bottom: 16px;
+    }
+
+    .report-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .report-required {
+        color: #dc2626;
+    }
+
+    .report-input,
+    .report-textarea {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 15px;
+        color: #0f172a;
+        background: #ffffff;
+        font-family: inherit;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .report-input:focus,
+    .report-textarea:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .report-textarea {
+        min-height: 130px;
+        resize: vertical;
+    }
+
+    .report-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .report-btn {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .report-btn-primary {
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+        color: #ffffff;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+    }
+
+    .report-btn-primary:hover {
+        transform: translateY(-1px);
+    }
+
+    .report-btn-secondary {
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    .report-status {
+        display: none;
+        margin-bottom: 16px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .report-status.show {
+        display: block;
+    }
+
+    .report-status.success {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .report-status.error {
+        background: #fce7f3;
+        color: #9d174d;
+    }
+
+    /* =========================================
+    Sidebar bottom action
+    ========================================= */
+    .sidebar-bottom-action {
+        padding: 12px 15px 14px;
+        border-top: 1px solid #f1f5f9;
+        background: #ffffff;
+    }
+
+    .report-problem-btn {
+        text-decoration: none;
+        margin-bottom: 0;
+    }
+
+    .report-problem-btn .material-symbols-outlined {
+        font-size: 20px;
+        color: inherit;
+    }
+
+    .report-problem-btn:hover {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    /* =========================================
+    Responsive
+    ========================================= */
+    @media (max-width: 640px) {
+        .report-modal {
+            width: min(100%, 100%);
+            padding: 20px;
+            border-radius: 16px;
+        }
+
+        .report-actions {
+            flex-direction: column;
+        }
+
+        .report-btn {
+            width: 100%;
+        }
+    }
+    /* =========================================
+       สไตล์สำหรับการพิมพ์
+    ========================================= */
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 25mm 15mm 25mm 15mm;
+        }
+
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        body > *:not(#print-area) {
+            display: none !important;
+        }
+
+        #print-area {
+            display: block !important;
+            position: relative !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        #report-pdf {
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        body {
+            counter-reset: page;
+        }
+
+        .print-footer {
+            position: fixed;
+            bottom: -20mm;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 5mm;
+            width: 100%;
+        }
+
+        .page-number::after {
+            counter-increment: page;
+            content: "หน้า " counter(page);
+        }
+
+        .report-section {
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom: 10mm;
+        }
+
+        table, tr {
+            page-break-inside: avoid;
+        }
+    }
+        
+
+    /* =========================================
+       สไตล์สำหรับ Live Visitor
+    ========================================= */
+    .visitor-wrapper {
+        padding: 20px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: center;
+        background: white;
+    }
+
+    .visitor-pill {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        width: 100%;
+        line-height: 1;
+    }
+
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+        animation: pulse-live 2s infinite;
+        margin-top: -1px;
+    }
+
+    .live-text {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+    }
+
+    .views-count {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        border-left: 1px solid #cbd5e1;
+        padding-left: 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    #visitor-count {
+        color: #3b82f6;
+        font-weight: 800;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        transform: translateY(-0.5px);
+    }
+
+    @keyframes pulse-live {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* =========================================
+       Responsive
+    ========================================= */
+    @media (max-width: 960px){
+        .hero-card,
+        .cards-grid{
+            grid-template-columns:1fr 1fr;
+        }
+        .hero-card{
+            grid-template-columns:1fr;
+        }
+    }
+
+    @media (max-width: 768px){
+        header.top-bar{
+            height:auto;
+            padding:16px 18px;
+            flex-direction:column;
+            align-items:flex-start;
+            gap:12px;
+        }
+
+        nav{
+            width:100%;
+            flex-wrap:wrap;
+            gap:14px;
+        }
+
+        .main-content{
+            width:min(100% - 20px, 1180px);
+            margin:20px auto 48px;
+        }
+
+        .hero-card{
+            padding:24px 20px;
+            border-radius:24px;
+        }
+
+        .hero-copy h2{ font-size:26px; }
+        .section-banner h2{ font-size:22px; }
+        .cards-grid{ grid-template-columns:1fr; }
+
+        .history-card{
+            flex-direction:column;
+            align-items:flex-start;
+            padding:20px;
+        }
+
+        .btn-history{ width:100%; }
+
+        .visitor-wrapper {
+            position: static;
+            transform: none;
+            margin-top: 20px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .report-modal {
+            padding: 20px;
+            border-radius: 14px;
+        }
+
+        .report-actions {
+            flex-direction: column;
+        }
+
+        .report-btn {
+            width: 100%;
+        }
+    }
+    
+</style>
+</head>
+
+<body data-page="validate">
+
+    <!-- Mobile Toggle -->
+    <div class="lg:hidden fixed top-5 left-5 z-[1300] bg-blue-600 text-white p-2 rounded-lg cursor-pointer"
+        onclick="toggleSidebar()">
+        <span class="material-symbols-outlined">menu</span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-header pt-2 pb-4 px-6 flex flex-col items-center justify-center w-full">
+    
+            <a href="index.html" class="sidebar-logo flex items-center justify-center w-full" style="margin-top: -6px;">
+                <img src="/images/logo5.png" alt="AINSWERtainty Logo" class="h-10 w-auto max-w-full object-contain">
+            </a>
+            
+            <p style="margin-top: 2px; font-size: 7px; font-weight: 100; color: #475569; font-family: 'Sriracha', sans-serif;" class="text-center">
+                จัดการ Uncertainty อย่างชาญฉลาด มั่นใจทุกผลการทดสอบ
+            </p>
+        </div>
+        </div>
+
+        <div class="sidebar-content">
+            <a href="index.html" class="nav-item" id="home" onclick="switchPage('home')">
+                <span class="material-symbols-outlined text-xl">home</span> Home
+            </a>
+            <p class="px-4 text-[11px] font-bold text-slate-400 uppercase mb-2">Main Menu</p>
+            <a href="#" class="nav-item" id="nav-dashboard" onclick="switchPage('dashboard')">
+                <span class="material-symbols-outlined text-xl">dashboard</span> Dashboard
+            </a>
+            <p class="px-4 text-[11px] font-bold text-slate-400 uppercase mt-4 mb-2">Calculators</p>
+            <a href="#" class="nav-item" id="nav-type-bias" onclick="switchPage('type-bias')">
+                <span class="material-symbols-outlined text-xl">calculate</span> Uncertainty of Bias
+            </a>
+            <a href="#" class="nav-item" id="nav-type-rw" onclick="switchPage('type-rw')">
+                <span class="material-symbols-outlined text-xl">precision_manufacturing</span> Uncertainty of Reproducibility
+            </a>
+            <a href="#" class="nav-item" id="nav-combined" onclick="switchPage('combined')">
+                <span class="material-symbols-outlined text-xl">account_tree</span> Combined Budget
+            </a>            
+        </div>
+
+        <div class="sidebar-bottom-action">
+            <a href="#" class="nav-item report-problem-btn" id="reportProblemLink">
+                <span class="material-symbols-outlined">bug_report</span>
+                <span>Report a problem</span>
+            </a>
+        </div>
+
+        <div class="visitor-wrapper">
+            <div class="visitor-pill">
+                <div class="live-dot"></div>
+                <span class="live-text">LIVE</span>
+                <span class="views-count">VIEWS: <span id="visitor-count">24</span></span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+        <!-- DASHBOARD PAGE -->
+        <section id="page-dashboard" class="container-custom page-view">
+            <div class="bg-gradient-to-r from-indigo-700 to-blue-600 rounded-[40px] p-12 text-white mb-10 relative overflow-hidden shadow-2xl">
+                <div class="relative z-10">
+                    <h2 class="text-5xl font-black mb-3 tracking-tight">สรุปภาพรวม (Dashboard)</h2>
+                    <p class="text-indigo-100 font-sriracha text-xl opacity-90">จัดการความไม่แน่นอน และรายงานผลการวัดอย่างเป็นระบบ</p>
+                </div>
+                <span class="material-symbols-outlined absolute right-[-20px] bottom-[-20px] text-[240px] opacity-10">monitoring</span>
+            </div>
+
+            <!-- ส่วนที่ 1: Input Control Panel (ค่าที่ต้องการรายงานผล) -->
+            <div class="glass-card mb-10 p-10 bg-white/90 border border-indigo-100 shadow-2xl rounded-[32px] relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-40 h-40 bg-indigo-50 rounded-full -mr-20 -mt-20 opacity-50"></div>
+                
+                <div class="relative z-10">
+                    <h3 class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-8 flex items-center">
+                        <span class="w-8 h-[2px] bg-indigo-400 mr-3"></span>
+                        Measurement Configuration
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <!-- Input: Measured Value -->
+                        <div class="space-y-4">
+                            <label class="flex items-center text-[12px] font-black text-slate-700 uppercase tracking-widest ml-1">
+                                <span class="material-symbols-outlined text-indigo-600 mr-2">edit_square</span>
+                                ค่าที่ต้องการรายงานผล (Measured Value : y)
+                            </label>
+                            <div class="relative group">
+                                <input type="number" id="dash-input-y" oninput="updateDashboardResults()"
+                                    placeholder="กรอกค่าที่วัดได้จริง..."
+                                    class="w-full bg-slate-50 border-2 border-slate-100 rounded-[24px] py-5 px-8 text-2xl font-black text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-8 focus:ring-indigo-500/5 outline-none transition-all shadow-inner font-montserrat">
+                                <span id="dashboard-unit-label" class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-bold">mg/L</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ส่วนที่ 2: Summary Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <!-- uA Card -->
+                <div class="p-8 bg-emerald-50 border border-emerald-100 rounded-[32px] shadow-sm">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase mb-3 tracking-widest">Method Bias</p>
+                    <div class="text-3xl font-black font-montserrat text-emerald-700" id="dash-u-b">0.000000</div>
+                    <p class="text-[9px] text-emerald-500/70 mt-2 font-bold uppercase italic"></p>
+                </div>
+
+                <!-- uB Card -->
+                <div class="p-8 bg-blue-50 border border-blue-100 rounded-[32px] shadow-sm">
+                    <p class="text-[10px] font-black text-blue-600 uppercase mb-3 tracking-widest">Reproducibility</p>
+                    <div class="text-3xl font-black font-montserrat text-blue-700" id="dash-u-a">0.000000</div>
+                    <p class="text-[9px] text-blue-500/70 mt-2 font-bold uppercase italic"></p>
+                </div>              
+
+                <!-- Expanded U Card -->
+            <div class="p-8 bg-amber-50 border border-amber-100 rounded-[32px] shadow-sm flex flex-col justify-between min-h-[180px]">
+                <div>
+                    <p class="text-[10px] font-black text-amber-600 uppercase mb-3 tracking-widest">
+                        Expanded U (%)
+                    </p>
+                    <div class="flex items-end gap-2">
+                        <div class="text-4xl font-black font-montserrat text-amber-700 leading-none" id="dash-u-rel">
+                            0.000
+                        </div>
+                        <span class="text-sm font-bold text-amber-500 mb-1">%</span>
+                    </div>
+                </div>
+                <p class="text-[9px] text-amber-500/70 mt-4 font-bold uppercase italic tracking-wide">
+                    Percent of Measure
+                </p>
+            </div>
+
+            <!-- Final Report Card -->
+            <div class="p-8 bg-slate-900 border border-slate-800 rounded-[32px] shadow-2xl shadow-indigo-200 flex flex-col justify-between min-h-[180px]">
+                <div>
+                    <p class="text-[10px] font-black text-indigo-400 uppercase mb-3 tracking-widest">
+                        Report Result (y ± U)
+                    </p>
+
+                    <div class="flex items-end gap-3 flex-wrap">
+                        <div class="text-2xl md:text-3xl font-black font-montserrat text-white tracking-tight leading-none" id="dash-final-report">
+                            0.0000 ± 0.0000
+                        </div>                        
+                    </div>
+                </div>
+
+                <p class="text-[9px] text-slate-500 font-bold uppercase mt-4 tracking-tighter">
+                    k=2, 95% Confidence Level
+                </p>
+            </div>
+            </div>
+
+            <!-- ส่วนที่ 3: Uncertainty Budget Analysis (Chart) -->
+            <div class="glass-card mb-12 p-10 bg-white border border-slate-100 shadow-2xl rounded-[40px]">
+                <h3 class="font-black text-slate-800 mb-10 text-xl flex items-center gap-4">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-indigo-600">pie_chart</span>
+                    </div>
+                    Uncertainty Contribution Analysis
+                </h3>
+                <div style="height: 400px;" class="flex items-center justify-center w-full">
+                    <canvas id="budgetChart"></canvas>
+                </div>
+            </div>
+
+            <!-- === ส่วนที่ 2: Input & Actions (Test Description / Operator) === -->
+            <div class="glass-card mb-12 p-8 bg-white/90 backdrop-blur-2xl border border-indigo-100/50 shadow-2xl rounded-[32px] relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
+                
+                <div class="relative z-10">
+                    <h3 class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-6 flex items-center">
+                        <span class="w-8 h-[2px] bg-indigo-400 mr-3"></span>
+                        Test Information & Actions
+                    </h3>
+                    
+                    <div class="space-y-5">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 lg:gap-5 items-end">
+                            
+                            <div class="lg:col-span-2 space-y-2">
+                                <label for="lab-no-input" class="flex items-center text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">
+                                    <span class="material-symbols-outlined text-[16px] mr-2 text-indigo-500">science</span>
+                                    Lab No.
+                                </label>
+                                <div class="relative group">
+                                    <input
+                                        type="text"
+                                        id="lab-no-input"
+                                        placeholder="เช่น L69/...."
+                                        class="w-full h-14 bg-slate-50 border-2 border-slate-100 rounded-2xl pl-11 pr-4 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm"
+                                    >
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
+                                        science
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-4 space-y-2">
+                                <label for="test-item-input" class="flex items-center text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">
+                                    <span class="material-symbols-outlined text-[16px] mr-2 text-indigo-500">biotech</span>
+                                    Test Description
+                                </label>
+                                <div class="relative group">
+                                    <input
+                                        type="text"
+                                        id="test-item-input"
+                                        placeholder="เช่น การทดสอบค่า pH ในน้ำเสีย..."
+                                        class="w-full h-14 bg-slate-50 border-2 border-slate-100 rounded-2xl pl-11 pr-4 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm"
+                                    >
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
+                                        edit_note
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-3 space-y-2">
+                                <label for="user-name-input" class="flex items-center text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">
+                                    <span class="material-symbols-outlined text-[16px] mr-2 text-indigo-500">badge</span>
+                                    Operator Name
+                                </label>
+                                <div class="relative group">
+                                    <input
+                                        type="text"
+                                        id="user-name-input"
+                                        placeholder="ระบุชื่อของคุณ..."
+                                        class="w-full h-14 bg-slate-50 border-2 border-slate-100 rounded-2xl pl-11 pr-4 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm"
+                                    >
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
+                                        person
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-3 space-y-2">
+                                <label for="group-name-input" class="flex items-center text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">
+                                    <span class="material-symbols-outlined text-[16px] mr-2 text-indigo-500">groups</span>
+                                    Group Name
+                                </label>
+                                <div class="relative group">
+                                    <select
+                                        id="group-name-input"
+                                        class="w-full h-14 bg-slate-50 border-2 border-slate-100 rounded-2xl pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition-all shadow-sm appearance-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                    >
+                                        <option value="" disabled selected>กำลังโหลดข้อมูลกลุ่ม...</option>
+                                    </select>
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors pointer-events-none">
+                                        groups
+                                    </span>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row justify-end items-center gap-4 pt-2">
+                            <div class="w-full sm:w-44">
+                                <button
+                                    type="button"
+                                    onclick="report()"
+                                    class="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-black px-5 rounded-2xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <span class="material-symbols-outlined text-[20px]">analytics</span>
+                                    <span class="uppercase tracking-[0.08em]">Report</span>
+                                </button>
+                            </div>
+
+                            <div class="w-full sm:w-52">
+                                <button
+                                    id="btn-save"
+                                    type="button"
+                                    onclick="saveToSheets()"
+                                    class="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 rounded-2xl shadow-lg shadow-emerald-100 hover:shadow-emerald-200 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2 border-b-4 border-emerald-700/30"
+                                >
+                                    <span class="material-symbols-outlined text-[20px]">description</span>
+                                    <span class="whitespace-nowrap uppercase tracking-[0.05em]">Save to Sheets</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="report-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+                <div class="absolute inset-0 modal-overlay" onclick="closeReport()"></div>
+
+                <div
+                    class="relative bg-white rounded-[32px] shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto z-10 animate-in zoom-in duration-300">
+
+                    <div
+                        class="sticky top-0 bg-white/90 backdrop-blur-md px-8 py-4 border-b border-slate-100 flex justify-between items-center no-print">
+                        <h3 class="font-black text-slate-800 tracking-tight">Report Preview</h3>
+                        <div class="flex gap-3">
+                            <button onclick="window.savePDF()"class="no-print flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-200">
+                                <span class="material-symbols-outlined text-sm">print</span> print / บันทึก
+                            </button>
+                            <button onclick="closeReport()"class="no-print bg-slate-100 hover:bg-slate-200 text-slate-500 p-2 rounded-xl transition-all">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="report-container">
+                        <div id="report-pdf" style="
+                            width: 210mm; 
+                            min-height: 297mm; 
+                            padding: 12mm 12mm 10mm 12mm; 
+                            box-sizing: border-box; 
+                            background: white;
+                            " class="shadow-2xl text-slate-800 font-sans mx-auto relative flex flex-col">
+
+        <div class="report-section">
+            <div class="flex justify-between items-start border-b pb-3 mb-4">
+                <div>
+                    <h1 class="text-2xl font-black text-indigo-600 leading-none">AINSWERtainty</h1>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                        Scientific Measurement System</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-lg font-bold text-slate-900 leading-none">MEASUREMENT REPORT</h2>
+                    <p id="pdf-date" class="text-[10px] text-slate-500 mt-1 font-medium"></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="space-y-1">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Laboratory No.</p>
+                    <p id="pdf-lab-no" class="text-xs font-semibold text-slate-700 border-b border-slate-50 pb-0.5 italic"></p>
+                </div> 
+                <div class="space-y-1">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Test Description</p>
+                    <p id="pdf-test" class="text-xs font-semibold text-slate-700 border-b border-slate-50 pb-0.5 italic"></p>
+                </div>               
+                <div class="space-y-1">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Operator / Analyst</p>
+                    <p id="pdf-user" class="text-xs font-semibold text-slate-700 border-b border-slate-50 pb-0.5"></p>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Department / Group</p>
+                    <p id="pdf-group" class="text-xs font-semibold text-slate-700 border-b border-slate-50 pb-0.5"></p>
+                </div>
+            </div>
+
+            <div class="bg-indigo-50/40 rounded-2xl p-6 border border-indigo-100 text-center mb-8 relative overflow-hidden">
+                <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.2em] mb-2">Final Measurement Result</p>
+                <h2 id="pdf-result" class="text-3xl font-black text-slate-900 mb-1 tracking-tight"></h2>
+                <p id="pdf-relative" class="text-xs font-bold text-slate-500 italic"></p>
+            </div>
+
+            <div class="mb-8">
+                <h3 class="flex items-center text-[10px] font-black uppercase tracking-widest mb-4 text-slate-400">
+                    <span class="w-6 h-[1px] bg-slate-200 mr-2"></span>
+                    Uncertainty Contribution Analysis
+                    <span class="ml-2 flex-1 h-[1px] bg-slate-200"></span>
+                </h3>
+                <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                    <canvas id="reportChart" style="height:180px !important;"></canvas>
+                </div>
+            </div>
+
+           
+
+    <!-- ================= PAGE 1 ================= -->
+    <div id="report-pdf">
+
+    
+    <div class="report-section">
+
+        <section>
+            <h3 class="text-[10px] font-black uppercase tracking-widest mb-3 text-indigo-500 flex items-center">
+                <span class="material-symbols-outlined text-sm mr-2">analytics</span>
+                BIAS 
+            </h3>
+
+            <div id="pdf-type-a"
+                 class="rounded-lg overflow-hidden border border-slate-100 shadow-sm">
+            </div>
+        </section>
+
+    </div>
+
+    <!-- 🔥 PAGE BREAK -->
+    <div class="html2pdf__page-break"></div>
+
+
+    <!-- ================= PAGE 2 ================= -->
+    <div class="report-section">
+
+        <section>
+            <h3 class="text-[10px] font-black uppercase tracking-widest mb-3 text-indigo-500 flex items-center">
+                <span class="material-symbols-outlined text-sm mr-2">precision_manufacturing</span>
+                Within-laboratory Reproducibility
+            </h3>
+
+            <div id="pdf-type-b"
+                 class="rounded-lg overflow-hidden border border-slate-100 shadow-sm">
+            </div>
+        </section>
+
+        <!-- 🔥 footer ต้องอยู่ท้าย section -->
+        <div class="report-footer mt-10 pt-8 border-t border-slate-200">
+
+            <div class="grid grid-cols-2 gap-16 text-center">
+                <div class="flex flex-col items-center">
+                    <div class="w-48 h-12 border-b border-slate-400 mb-2"></div>
+                    <p class="text-xs font-bold text-slate-600 tracking-wide">Analyst</p>
+                    <p class="text-[10px] text-slate-400 mt-1">(ผู้วิเคราะห์)</p>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <div class="w-48 h-12 border-b border-slate-400 mb-2"></div>
+                    <p class="text-xs font-bold text-slate-600 tracking-wide">Reviewer</p>
+                    <p class="text-[10px] text-slate-400 mt-1">(ผู้ตรวจสอบ)</p>
+                </div>
+            </div>
+        </div> 
+    </div>
+
+</div>
+</section>
+    <!-- TYPE bias PAGE -->
+    <section id="page-type-bias" class="container-custom page-view hidden-page"> 
+    
+    <!-- 1. ส่วนหัวหน้า (Header) -->
+    <div class="bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 rounded-[32px] p-10 mb-8 text-white shadow-2xl relative overflow-hidden">
+        <span class="material-symbols-outlined absolute right-[-10px] top-[-10px] text-[200px] opacity-10">analytics</span>
+        <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-blue-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Method Validation</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold font-montserrat mb-2">Bias Evaluation</h1>
+            <p class="text-blue-100 text-lg opacity-80">การประเมินค่าความไม่แน่นอนจากความเอนเอียงตามแนวทาง Nordtest</p>
+        </div>
+    </div>
+
+    <!-- 2. ส่วนสูตรคำนวณและ Option Selection (แสดงเต็มความกว้าง) -->
+    <div class="glass-card overflow-hidden border-0 shadow-xl bg-white rounded-[32px] mb-10">
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-500 px-8 py-4 flex items-center gap-3">
+            <span class="material-symbols-outlined text-white">science</span>
+            <h3 class="text-white font-bold text-sm uppercase tracking-widest">1. BIAS EVALUATION PRINCIPLE</h3>
+        </div>
+
+        <div class="p-8 space-y-8">
+            <!-- Formula & Definition Grid -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-center">
+                <div class="space-y-4">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Relative Bias Formula</p>
+                    <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex justify-center items-center overflow-x-auto">
+                        <div class="text-xl">
+                            \[ \% \text{Rel bias} = \left( \frac{C_{\text{meas}} - C_{\text{spk}}}{C_{\text{spk}}} \right) \times 100 \]
+                        </div>
+                    </div>
+                </div>
+                <div class="border-l-4 border-indigo-500 pl-6 space-y-3">
+                    <h4 class="font-bold text-slate-700 text-xs uppercase tracking-tighter">Variable Definition</h4>
+                    <ul class="text-sm text-slate-500 space-y-2 font-medium">
+                        <li><span class="font-bold text-slate-600">C<sub>meas</sub> :</span> ความเข้มข้นที่วิเคราะห์ได้จริง</li>
+                        <li><span class="font-bold text-slate-600">C<sub>spk</sub> :</span> ความเข้มข้นที่เติมสารมาตรฐาน</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Note Box -->
+            <div class="bg-amber-50/70 rounded-2xl p-5 border border-amber-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-[14px] font-bold text-indigo-700 font-montserrat italic">
+                    C<sub>meas</sub> = C<sub>spk_sample</sub> - C<sub>unspk</sub>
+                </p>
+                <p class="text-[10px] text-amber-800 font-medium italic">
+                    * หักลบความเข้มข้นของตัวอย่างที่ไม่ได้เติมสารมาตรฐาน (Background) เสมอ
+                </p>
+            </div>
+
+            <hr class="border-slate-100">
+            
+            <!-- Option Selection Area -->           
+            <div class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Select Calculation Model for \( u_{\text{bias}} \)</p>
+                    <!-- แก้ไข Badge ให้แสดงผลเป็น Option A -->
+                    <span id="current-option-badge" class="bg-indigo-700 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm transition-all">Option A Active</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Option A Button (แก้ไขเป็น Active) -->
+                    <button onclick="setBiasOption('A')" id="btn-option-a" 
+                        class="group p-6 rounded-2xl border-2 border-indigo-700 text-left bg-indigo-50/50 shadow-md transition-all duration-300">
+                        <div class="flex items-center justify-between mb-3">
+                            <span id="text-option-a" class="text-[11px] font-black text-indigo-700 uppercase tracking-widest">Option A: RMS Model</span>
+                            <span id="icon-option-a" class="material-symbols-outlined text-indigo-700 text-2xl">check_circle</span>
+                        </div>
+                        <div class="text-sm text-slate-700 font-medium italic">
+                            \[ u_{\text{bias}} = \sqrt{\text{Mean}_{\text{Rel bias}}^2 + \text{SD}_{\text{Rel bias}}^2} \]
+                        </div>
+                    </button>
+
+                    <!-- Option B Button (แก้ไขเป็น Unselected) -->
+                    <button onclick="setBiasOption('B')" id="btn-option-b" 
+                        class="group p-6 rounded-2xl border-2 border-slate-100 text-left bg-white transition-all duration-300">
+                        <div class="flex items-center justify-between mb-3">
+                            <span id="text-option-b" class="text-[11px] font-black text-slate-400 uppercase tracking-widest">Option B: Standard Error Model</span>
+                            <span id="icon-option-b" class="material-symbols-outlined text-slate-200 text-2xl">radio_button_unchecked</span>
+                        </div>
+                        <div class="text-sm text-slate-600 font-medium italic">
+                            \[ u_{\text{bias}} = \sqrt{\text{Mean}_{\text{Rel bias}}^2 + \left( \frac{\text{SD}_{\text{Rel bias}}}{\sqrt{n}} \right)^2} \]
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+    <!-- 3. ส่วนการเลือก Level (Tabs) -->
+    <div class="flex flex-wrap items-center gap-3 mb-8" id="level-tabs-container">
+        <button onclick="addLevel()" class="group flex items-center justify-center w-11 h-11 rounded-xl bg-white border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all duration-300 shadow-sm">
+            <span class="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform">add</span>
+        </button>
+    </div>
+
+    <!-- 4. ส่วนตารางกรอกข้อมูลและสรุปผล -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+
+    <!-- Main Table Area -->
+    <div class="xl:col-span-8">
+        <div class="bg-white rounded-[32px] border border-slate-200/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] overflow-hidden">
+
+            <!-- Header -->
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 px-8 lg:px-10 py-7 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-blue-50/40">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[11px] font-black uppercase tracking-[0.18em] mb-3">
+                        <span class="material-symbols-outlined text-[16px]">table_rows</span>
+                        Bias Input
+                    </div>
+                    <h3 class="text-[26px] lg:text-[30px] font-black text-slate-800 leading-none">Data Entry Table</h3>
+                    <p class="text-sm text-slate-500 mt-2">กรอกผลการทดสอบ (Measured Results) สำหรับแต่ละระดับความเข้มข้น</p>
+                </div>
+
+                <div class="flex items-center gap-3 bg-white/90 backdrop-blur-sm px-4 py-3 rounded-[24px] border border-blue-100 shadow-sm min-w-[300px] justify-between">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em]">Reference Value</p>
+                        <label class="text-[11px] font-black text-blue-600 tracking-[0.15em] whitespace-nowrap">
+                            Spiked Conc. (<span id="spiked-unit-label">mg/L</span>)
+                        </label>
+                    </div>
+                    <input
+                        type="number"
+                        id="spiked-conc"
+                        step="any"
+                        oninput="updateSpikedValue(this.value)"
+                        class="w-36 bg-blue-50 border-2 border-blue-200 rounded-2xl px-4 py-3 font-black text-blue-700 text-center outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
+                        placeholder="0.0000"
+                    >
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="px-6 lg:px-8 py-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-separate border-spacing-y-4">
+                        <thead>
+                            <tr class="text-slate-400 text-[11px] uppercase tracking-[0.22em] font-black">
+                                <th class="px-4 py-2 w-16">No.</th>
+                                <th class="px-4 py-2 min-w-[320px]">Measured</th>
+                                <th class="px-4 py-2 text-center w-40">Unit</th>
+                                <th class="px-4 py-2 text-center w-40">Rel. Bias</th>
+                                <th class="px-4 py-2 w-12"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="pt-5 mt-2 border-t border-slate-100">
+                    <button onclick="addRow()" class="inline-flex items-center gap-2 text-blue-600 font-black text-[12px] uppercase tracking-[0.15em] hover:text-blue-700 transition-all px-2 py-2 rounded-xl hover:bg-blue-50">
+                        <span class="material-symbols-outlined text-[20px]">add_circle</span>
+                        Add New Result
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistical Summary Sidebar -->
+    <div class="xl:col-span-4">
+        <div class="sticky top-8 space-y-6">
+
+            <div class="bg-white rounded-[32px] border border-slate-200/80 shadow-[0_20px_60px_rgba(15,23,42,0.08)] overflow-hidden">
+                <div class="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[11px] font-black uppercase tracking-[0.16em] mb-3">
+                        <span class="material-symbols-outlined text-[15px]">analytics</span>
+                        Live Summary
+                    </div>
+                    <h3 class="text-[22px] font-black text-slate-800 leading-none">Statistical Summary</h3>
+                    <p class="text-sm text-slate-500 mt-2">สรุปค่าทางสถิติของระดับที่กำลังคำนวณ</p>
+                </div>
+
+                <div class="p-6 space-y-4">
+
+                    <div class="rounded-[24px] border border-slate-100 bg-slate-50/80 p-5">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-2">Mean Rel. Bias (%)</p>
+                        <div class="text-4xl font-black text-slate-800 font-montserrat leading-none" id="stat-mean">0.0000</div>
+                    </div>
+
+                    <div class="rounded-[24px] border border-slate-100 bg-slate-50/80 p-5">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-2">SD Rel. Bias (%)</p>
+                        <div class="text-4xl font-black text-slate-800 font-montserrat leading-none" id="stat-sd">0.0000</div>
+                    </div>
+
+                    <div class="rounded-[28px] bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 p-6 shadow-[0_18px_40px_rgba(37,99,235,0.28)] text-white relative overflow-hidden">
+                        <div class="absolute right-[-12px] bottom-[-10px] opacity-10">
+                            <span class="material-symbols-outlined text-[92px]">functions</span>
+                        </div>
+
+                        <p class="text-[10px] font-black text-blue-100 uppercase tracking-[0.18em] mb-2 relative z-10">u(bias) level (%)</p>
+                        <div class="text-4xl lg:text-5xl font-black text-white font-montserrat leading-none relative z-10" id="stat-ubias">0.0000</div>
+
+                        <div class="mt-5 pt-4 border-t border-white/20 relative z-10">
+                            <p class="text-[10px] text-blue-100/90 italic font-medium leading-relaxed" id="formula-display">
+                                Formula: u(bias) = sqrt( Mean_bias² + (SD_bias / √n)² )
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="rounded-[24px] border border-amber-100 bg-amber-50/70 p-5">
+                        <p class="text-[10px] font-black text-amber-600 uppercase tracking-[0.18em] mb-2">Interpretation</p>
+                        <p class="text-[12px] text-amber-800 leading-relaxed">
+                            ค่า Mean และ SD แสดงแนวโน้มของ bias ส่วน u(bias) คือค่าความไม่แน่นอนรวมของแต่ละ level สำหรับนำไปคำนวณ uncertainty budget ต่อไป
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+</section>  
+       
+        
+<!-- TYPE precision PAGE -->
+<section id="page-type-rw" class="container-custom page-view hidden-page px-4 md:px-8">
+    <!-- Header: คงความหรูหราแบบ Emerald เพื่อแยกโมดูล -->
+    <div class="bg-gradient-to-br from-slate-900 via-emerald-900 to-emerald-800 rounded-[40px] p-10 mb-10 text-white shadow-2xl relative overflow-hidden">
+        <span class="material-symbols-outlined absolute right-[-20px] top-[-20px] text-[220px] opacity-10">autorenew</span>
+        <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-emerald-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg">Component 1</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-bold font-montserrat mb-3 tracking-tight">u(R<sub>w</sub>) Evaluation</h1>
+            <p class="text-emerald-100/80 text-lg font-light tracking-wide">การประเมินความไม่แน่นอนจากการทำซ้ำ (Within-laboratory Reproducibility)</p>
+        </div>
+    </div>
+
+    <!-- u(Rw) Level Tabs: ใช้สี Indigo-700 เมื่อ Active -->
+    <div class="flex flex-wrap items-center justify-start gap-4 mb-10" id="rw-tabs-container">
+        <!-- Tabs จะถูก Generate ที่นี่ (Active: bg-indigo-700, Inactive: bg-white) -->
+        <button onclick="addRwLevel()" class="w-12 h-12 rounded-2xl bg-emerald-50 border-2 border-dashed border-emerald-200 text-emerald-600 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm flex items-center justify-center group">
+            <span class="material-symbols-outlined group-hover:rotate-90 transition-transform">add</span>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+        <!-- Main Data Entry Area -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="bg-white rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/50 p-8 md:p-12 transition-all">
+                
+                <!-- Data Source Selector: จัดวางกึ่งกลางเพื่อลดอาการเอียงซ้าย -->
+                <div class="flex flex-col items-center justify-center gap-6 mb-12 bg-slate-50/80 p-8 rounded-[32px] border border-slate-100 shadow-inner">
+                    <div class="text-center">
+                        <h3 class="text-xs font-black text-indigo-700 uppercase tracking-[0.3em] mb-2">Import Data Source</h3>
+                        <p class="text-[12px] text-slate-500 italic">เลือกชุดข้อมูลจาก Bias Evaluation เพื่อใช้กรอก Measured Value อัตโนมัติ</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row items-center gap-4 w-full max-w-lg">
+                        <div class="relative w-full">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">database</span>
+                            <select id="bias-level-selector" class="w-full bg-white border-2 border-slate-200 rounded-2xl pl-12 pr-6 py-4 font-bold text-slate-700 outline-none focus:border-indigo-700 focus:ring-4 focus:ring-indigo-700/5 transition-all appearance-none cursor-pointer shadow-sm">
+                                <!-- Options generated by JS -->
+                            </select>
+                        </div>
+                        <button onclick="importFromBias()" class="w-full md:w-auto bg-indigo-700 text-white px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-900 transition-all shadow-xl shadow-indigo-100 active:scale-95 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">download</span> Import
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reproducibility Table: ขยายพื้นที่ให้ดูสมดุล -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-separate border-spacing-y-4">
+                        <thead>
+                            <tr class="text-slate-400 text-[10px] uppercase tracking-[0.3em] font-black">
+                                <th class="px-6 py-2 w-24 text-center">No.</th>
+                                <th class="px-6 py-2 text-left">Recovery (%)</th>
+                                <th class="px-6 py-2 w-20 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rw-table-body">
+                            <!-- Rows will be generated by renderRwTable() -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Add New Result Button -->
+                <div class="mt-8 pt-6 border-t border-slate-50 flex justify-center">
+                    <button onclick="addRwRow()" class="group flex items-center gap-3 text-emerald-600 font-black text-[12px] uppercase tracking-[0.2em] hover:text-emerald-800 transition-all">
+                        <span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">add_circle</span> 
+                        Add New Measurement
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Summary: ใช้ Sticky เพื่อให้เลื่อนตามข้อมูล -->
+        <div class="lg:col-span-1">
+            <div class="bg-white p-10 rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/50 sticky top-8">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-indigo-700 text-lg">analytics</span> Statistical Summary
+                </h3>
+                <div class="space-y-8">
+                    <div class="group p-6 bg-slate-50 rounded-[24px] border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Mean (Measured)</p>
+                        <div class="text-4xl font-black text-slate-700 font-montserrat" id="res-rw-mean">0.0000</div>
+                    </div>
+                    <div class="group p-6 bg-slate-50 rounded-[24px] border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Standard Deviation (SD)</p>
+                        <div class="text-4xl font-black text-slate-700 font-montserrat" id="res-rw-sd">0.0000</div>
+                    </div>
+                    <div class="p-8 bg-indigo-700 rounded-[32px] shadow-2xl shadow-indigo-200 text-white relative overflow-hidden group">
+                        <span class="material-symbols-outlined absolute right-[-10px] bottom-[-10px] text-8xl opacity-10 group-hover:rotate-12 transition-transform">calculate</span>
+                        <p class="text-[10px] font-bold text-indigo-100 uppercase mb-2 tracking-widest relative z-10">u(Rw) level (%)</p>
+                        <div class="text-5xl font-black font-montserrat relative z-10" id="res-u-rw">0.0000</div>
+                        <div class="mt-6 pt-6 border-t border-white/10 relative z-10">
+                            <p class="text-[10px] text-indigo-100/70 italic leading-relaxed font-light">
+                                <strong class="text-white not-italic">Note:</strong> u(Rw) ในหน้านี้คำนวณเป็น %RSD ของค่า Measured ทั้งหมดใน Level นี้
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- combine PAGE -->
+<section id="page-combined" class="container-custom page-view hidden-page px-4 md:px-8">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 rounded-[40px] p-10 mb-10 text-white shadow-2xl relative overflow-hidden">
+        <span class="material-symbols-outlined absolute right-[-20px] top-[-20px] text-[220px] opacity-10">account_tree</span>
+        <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-purple-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg">Uncertainty Budget</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-bold font-montserrat mb-3 tracking-tight">Combined Budget</h1>
+            <p class="text-indigo-100/80 text-lg font-light tracking-wide">การรวมความไม่แน่นอนและคำนวณค่าขยาย (Expanded Uncertainty)</p>
+        </div>
+    </div>
+
+    <!-- Formula Cards: นำกลับมาจัดวางให้สวยงาม -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <div class="bg-white p-8 rounded-[32px] border-2 border-slate-50 shadow-sm flex flex-col items-center text-center">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-purple-600">calculate</span>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Combined Standard RSU</span>
+            </div>
+            <div class="text-2xl font-montserrat text-indigo-900 font-bold">
+                $$u_c = \sqrt{u_{Rw}^2 + u_{bias}^2}$$
+            </div>
+        </div>
+        <div class="bg-white p-8 rounded-[32px] border-2 border-slate-50 shadow-sm flex flex-col items-center text-center">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-indigo-600">expand</span>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expanded Uncertainty</span>
+            </div>
+            <div class="text-2xl font-montserrat text-indigo-900 font-bold">
+                $$U = k \times u_c \quad (k=2)$$
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden mb-10">
+        <div class="overflow-x-auto">
+            <table class="w-full border-separate border-spacing-0">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="py-8 px-10 text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] text-left">Source of Uncertainty</th>
+                        <th class="py-8 px-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">Type</th>
+                        <th class="py-8 px-10 text-[11px] font-black text-amber-600 uppercase tracking-[0.3em] text-center">RSU (Ratio) (%)</th>
+                        <th class="py-8 px-10 text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">Contr. (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="combined-table-body" class="divide-y divide-slate-50">
+                    <!-- แถวข้อมูลจะถูกเติมที่นี่เมื่อมีการคำนวณ -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Result Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="p-10 bg-white rounded-[40px] border border-slate-100 shadow-xl flex flex-col justify-center">
+            <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-[0.2em]">Combined Standard RSU ($u_c$)</p>
+            <div class="text-5xl font-black text-slate-800 font-montserrat" id="res-combined-uc">0.000000</div>
+        </div>
+        <div class="p-10 bg-indigo-700 rounded-[40px] shadow-2xl shadow-indigo-200 text-white relative overflow-hidden group">
+            <span class="material-symbols-outlined absolute right-[-15px] bottom-[-15px] text-9xl opacity-10 group-hover:rotate-12 transition-transform">verified</span>
+            <p class="text-[10px] font-bold text-indigo-100 uppercase mb-3 tracking-[0.2em]">Expanded Uncertainty ($U$) @ k=2</p>
+            <div class="text-5xl font-black font-montserrat" id="res-combined-U">0.000000</div>
+        </div>
+    </div>
+</section>
+<!-- =========================================
+   HTML โครงสร้าง Popup Report a Problem (ซ่อนไว้เริ่มต้น)
+========================================= -->
+<div class="report-overlay" id="reportOverlay" hidden>
+  <div class="report-modal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="report-header">
+      <div>
+        <h2 class="report-title" id="reportTitle">Report a Problem</h2>
+        <p class="report-subtitle">แจ้งปัญหาการใช้งานระบบ</p>
+      </div>
+      <button type="button" class="report-close" id="closeReportModal" aria-label="Close">×</button>
+    </div>
+
+    <div id="statusBox" class="report-status" role="status" aria-live="polite"></div>
+
+    <form id="reportForm" novalidate>
+      <div class="report-form-group">
+        <label class="report-label" for="report-name">Name <span class="report-required">*</span></label>
+        <input class="report-input" type="text" id="report-name" name="name" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-email">Email <span class="report-required">*</span></label>
+        <input class="report-input" type="email" id="report-email" name="email" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-page">หน้าที่พบปัญหา <span class="report-required">*</span></label>
+        <input class="report-input" type="text" id="report-page" name="page" required>
+      </div>
+
+      <div class="report-form-group">
+        <label class="report-label" for="report-description">รายละเอียดปัญหา <span class="report-required">*</span></label>
+        <textarea class="report-textarea" id="report-description" name="description" required></textarea>
+      </div>
+
+      <div class="report-actions">
+        <button type="submit" id="submitBtn" class="report-btn report-btn-primary">Submit</button>
+        <button type="button" class="report-btn report-btn-secondary" id="cancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+</main>
+    <script>
+/* =========================================
+   1. CONSTANTS & STATE MANAGEMENT
+========================================= */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHn5dTAxh5SYbg61aDuZk8sOvQqWJj7CPk-HWTylycQIex9w36bAYUukeD3npfSCf3Tw/exec';
+
+// --- State: General ---
+let currentSavedId = null;
+let currentOriginalId = null;
+
+// --- State: Bias Evaluation ---
+let activeTab = 0;
+let currentBiasOption = 'B';
+let selectedUnit = 'mg/L';
+let labData = [
+    { spiked: null, unspiked: 0, results: [null, null, null] }
+];
+
+// --- State: u(Rw) Evaluation ---
+let activeRwLevel = 0;
+let rwDataLevels = [
+    { results: [null, null, null] }
+];
+
+// --- State: Charts ---
+let myBudgetChart = null;
+
+/* =========================================
+   2. HELPERS & UTILITIES
+========================================= */
+function getInputValue(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+}
+
+function getTextValue(id) {
+    const el = document.getElementById(id);
+    return el ? (el.innerText || '').trim() : '';
+}
+
+function setInputValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    el.value = value ?? '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+}
+
+function getRecoveryDataRaw() {
+    return sessionStorage.getItem('recoveryData') || localStorage.getItem('recoveryData');
+}
+
+function clearRecoveryDataRaw() {
+    sessionStorage.removeItem('recoveryData');
+    localStorage.removeItem('recoveryData');
+}
+
+function cloneJSON(data, fallback = null) {
+    try {
+        return JSON.parse(JSON.stringify(data));
+    } catch (err) {
+        return fallback;
+    }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function updateUnit(unit) {
+    selectedUnit = unit || 'mg/L';
+
+    const unitSelector = document.getElementById('unit-selector');
+    const spikedLabel = document.getElementById('spiked-unit-label');
+    const dashboardLabel = document.getElementById('dashboard-unit-label');
+
+    if (unitSelector) unitSelector.value = selectedUnit;
+    if (spikedLabel) spikedLabel.innerText = selectedUnit;
+    if (dashboardLabel) dashboardLabel.innerText = selectedUnit;
+
+    renderTable();
+    updateDashboardResults();
+}
+
+function sanitizeBiasModule(biasModule) {
+    const fallback = {
+        activeTab: 0,
+        currentBiasOption: 'B',
+        labData: [{ spiked: null, unspiked: 0, results: [null, null, null] }]
+    };
+
+    if (!biasModule || typeof biasModule !== 'object') return fallback;
+
+    return {
+        activeTab: Number.isInteger(biasModule.activeTab) ? biasModule.activeTab : 0,
+        currentBiasOption: biasModule.currentBiasOption || 'B',
+        labData: Array.isArray(biasModule.labData) && biasModule.labData.length
+            ? biasModule.labData.map(level => ({
+                spiked: level?.spiked ?? null,
+                unspiked: level?.unspiked ?? 0,
+                results: Array.isArray(level?.results) && level.results.length
+                    ? level.results.map(v => (v === '' ? null : v))
+                    : [null, null, null]
+            }))
+            : fallback.labData
+    };
+}
+
+function sanitizeRwModule(rwModule) {
+    const fallback = {
+        activeRwLevel: 0,
+        rwDataLevels: [{ results: [null, null, null] }]
+    };
+
+    if (!rwModule || typeof rwModule !== 'object') return fallback;
+
+    return {
+        activeRwLevel: Number.isInteger(rwModule.activeRwLevel) ? rwModule.activeRwLevel : 0,
+        rwDataLevels: Array.isArray(rwModule.rwDataLevels) && rwModule.rwDataLevels.length
+            ? rwModule.rwDataLevels.map(level => ({
+                results: Array.isArray(level?.results) && level.results.length
+                    ? level.results.map(v => (v === '' ? null : v))
+                    : [null, null, null]
+            }))
+            : fallback.rwDataLevels
+    };
+}
+
+function applyBiasModuleToState(biasModule) {
+    const safeBias = sanitizeBiasModule(biasModule);
+    labData = safeBias.labData;
+    activeTab = Math.max(0, Math.min(safeBias.activeTab, labData.length - 1));
+    currentBiasOption = safeBias.currentBiasOption || 'B';
+
+    if (typeof renderTabs === 'function') renderTabs();
+    if (typeof renderTable === 'function') renderTable();
+    if (typeof setBiasOption === 'function') setBiasOption(currentBiasOption);
+    if (typeof calculateAll === 'function') calculateAll();
+}
+
+function applyRwModuleToState(rwModule) {
+    const safeRw = sanitizeRwModule(rwModule);
+    rwDataLevels = safeRw.rwDataLevels;
+    activeRwLevel = Math.max(0, Math.min(safeRw.activeRwLevel, rwDataLevels.length - 1));
+
+    if (typeof renderRwTabs === 'function') renderRwTabs();
+    if (typeof updateBiasDropdown === 'function') updateBiasDropdown();
+    if (typeof renderRwTable === 'function') renderRwTable();
+    if (typeof calculateRwLevelStats === 'function') calculateRwLevelStats();
+}
+
+function refreshValidateDashboard() {
+    if (typeof renderCombinedBudget === 'function') renderCombinedBudget();
+    if (typeof updateDashboardResults === 'function') updateDashboardResults();
+}
+
+/* =========================================
+   3. INITIALIZATION
+========================================= */
+document.addEventListener('DOMContentLoaded', () => {
+    renderTabs();
+    renderTable();
+    renderRwTabs();
+    renderRwTable();
+    updateUnit(selectedUnit);
+});
+
+/* =========================================
+   4. NAVIGATION & UI
+========================================= */
+function switchPage(pageId) {
+    document.querySelectorAll('.page-view').forEach(page => page.classList.add('hidden-page'));
+    const targetPage = document.getElementById('page-' + pageId);
+    if (targetPage) targetPage.classList.remove('hidden-page');
+
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    const activeNav = document.getElementById('nav-' + pageId) || document.getElementById(pageId);
+    if (activeNav) activeNav.classList.add('active');
+
+    if (pageId === 'type-rw') updateBiasDropdown();
+
+    if (window.innerWidth < 1024) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar.style.transform === 'translateX(0px)') toggleSidebar();
+    }
+    
+    if (pageId === 'combined') {
+        renderCombinedBudget();
+    }
+    
+    if (pageId === 'dashboard') {
+        if (typeof renderCombinedBudget === 'function') renderCombinedBudget();
+        updateDashboardResults();
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.style.transform = (sidebar.style.transform === 'translateX(0px)') ? 'translateX(-100%)' : 'translateX(0px)';
+}
+
+function report() {
+    // 1. ดึงข้อมูล Test Info
+    const testItem = document.getElementById('test-item-input').value || '- ไม่ได้ระบุ -';
+    const labNo = document.getElementById('lab-no-input').value || '- ไม่ได้ระบุ -';
+    const userName = document.getElementById('user-name-input').value || '- ไม่ได้ระบุ -';
+    const groupName = document.getElementById('group-name-input').value || '- ไม่ได้ระบุ -';
+    
+    const pdfTest = document.getElementById('pdf-test');
+    const pdfUser = document.getElementById('pdf-user');
+    const pdfGroup = document.getElementById('pdf-group');
+    const pdfLabNo = document.getElementById('pdf-lab-no');
+
+    if (pdfTest) pdfTest.innerText = testItem;
+    if (pdfUser) pdfUser.innerText = userName;
+    if (pdfGroup) pdfGroup.innerText = groupName;
+    if (pdfLabNo) pdfLabNo.innerText = labNo;
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('th-TH', { 
+        year: 'numeric', month: 'short', day: 'numeric', 
+        hour: '2-digit', minute: '2-digit' 
+    });
+    document.getElementById('pdf-date').innerText = `พิมพ์เมื่อ: ${dateStr}`;
+
+    // 2. ข้อมูลผลลัพธ์
+    const finalReport = document.getElementById('dash-final-report').innerText || '-';
+    const relativeU = document.getElementById('dash-u-rel').innerText || '-';
+    
+    document.getElementById('pdf-result').innerText = finalReport;
+    document.getElementById('pdf-relative').innerText = `Expanded Uncertainty (U) = ${relativeU}% ของค่าที่วัดได้`;
+
+    // 3. จัดการกราฟให้พอดีกับกระดาษ A4 โดยไม่ล้น
+    const originalChart = document.getElementById('budgetChart');
+    const reportChart = document.getElementById('reportChart');
+    if (originalChart && reportChart) {
+        reportChart.style.width = '100%';
+        reportChart.style.height = '180px';
+        reportChart.width = originalChart.width;
+        reportChart.height = originalChart.height;
+        const ctxReport = reportChart.getContext('2d');
+        ctxReport.drawImage(originalChart, 0, 0);
+    }
+
+    // 4. ดึงชื่อ Model ที่ผู้ใช้เลือกจริงจากหน้า Bias Evaluation (อิงจากปุ่มที่กดเลือก)
+    let selectedModelName = "Option B: Standard Error Model"; // ค่าเริ่มต้น
+    const btnA = document.getElementById('btn-option-a');
+    const btnB = document.getElementById('btn-option-b');
+    
+    // เช็คว่าปุ่มไหนมีคลาส Active (border-indigo-700)
+    if (btnA && btnA.classList.contains('border-indigo-700')) {
+        selectedModelName = "Option A: RMS Model";
+        currentBiasOption = 'A'; // อัปเดต state เพื่อความชัวร์
+    } else if (btnB && btnB.classList.contains('border-indigo-700')) {
+        selectedModelName = "Option B: Standard Error Model";
+        currentBiasOption = 'B';
+    } else {
+        // Fallback ไปใช้ currentBiasOption ถ้าหาปุ่มไม่เจอ
+        selectedModelName = currentBiasOption === 'A' ? "Option A: RMS Model" : "Option B: Standard Error Model";
+    }
+
+    // 5. สร้างเนื้อหาตาราง Type A แยกตาม Level
+    const typeADiv = document.getElementById('pdf-type-a');
+    let typeAHtml = '';
+    
+    // วนลูปตาม labData ที่บันทึกไว้ตาม Level
+    labData.forEach((level, index) => {
+        const spiked = level.spiked || 0;
+        let biases = [];
+        if (spiked !== 0) {
+            level.results.forEach(v => {
+                if (v !== null && !isNaN(v)) biases.push(((v - spiked) / spiked * 100));
+            });
+        }
+        
+        let meanBias = 0, sdBias = 0, uBias = 0;
+        if (biases.length > 0) {
+            meanBias = biases.reduce((a, b) => a + b, 0) / biases.length;
+            sdBias = biases.length > 1 ? Math.sqrt(biases.map(x => Math.pow(x - meanBias, 2)).reduce((a, b) => a + b) / (biases.length - 1)) : 0;
+            
+            // คำนวณ u(bias) ตาม Option ที่เลือก
+            uBias = (currentBiasOption === 'A') ? 
+                Math.sqrt(Math.pow(meanBias, 2) + Math.pow(sdBias, 2)) : 
+                Math.sqrt(Math.pow(meanBias, 2) + Math.pow(sdBias / Math.sqrt(biases.length), 2));
+        }
+
+        typeAHtml += `
+            <div class="mb-4">
+                <p class="text-xs font-bold text-indigo-600 mb-2">Level ${index + 1} (Spiked: ${spiked || 0} mg/L)</p>
+                <table class="w-full text-left text-[11px]">
+                    <tr class="bg-slate-50 text-slate-500 uppercase tracking-widest border-b border-t">
+                        <th class="p-3 w-[35%]">Calculation Model</th>
+                        <th class="p-3 text-center">Mean Rel. Bias (%)</th>
+                        <th class="p-3 text-center">SD Rel. Bias (%)</th>
+                        <th class="p-3 text-center">u(bias) level (%)</th>
+                    </tr>
+                    <tr class="border-b">
+                        <td class="p-3 font-bold text-slate-700">${selectedModelName}</td>
+                        <td class="p-3 text-center font-montserrat">${meanBias.toFixed(4)}</td>
+                        <td class="p-3 text-center font-montserrat">${sdBias.toFixed(4)}</td>
+                        <td class="p-3 text-center font-montserrat font-bold text-amber-600">${uBias.toFixed(4)}</td>
+                    </tr>
+                </table>
+            </div>`;
+    });
+    
+    if (labData.length === 0) {
+        typeAHtml = `<p class="p-4 text-center text-xs text-slate-400">ไม่มีข้อมูล Type A</p>`;
+    }
+    typeADiv.innerHTML = typeAHtml;
+
+    // 6. สร้างเนื้อหาตาราง Type B (uRw) แยกตาม Level
+    const typeBDiv = document.getElementById('pdf-type-b');
+    let typeBHtml = '';
+    
+    // วนลูปตาม rwDataLevels
+    rwDataLevels.forEach((level, index) => {
+        const validResults = level.results.filter(v => v !== null && !isNaN(v));
+        let rwMean = 0, rwSd = 0, rwU = 0;
+        
+        if (validResults.length > 0) {
+            rwMean = validResults.reduce((a, b) => a + b, 0) / validResults.length;
+            rwSd = validResults.length > 1 ? 
+                Math.sqrt(validResults.map(x => Math.pow(x - rwMean, 2)).reduce((a, b) => a + b) / (validResults.length - 1)) : 0;
+            rwU = (rwMean !== 0 && rwSd !== 0) ? (rwSd / rwMean) * 100 : 0;
+        }
+
+        typeBHtml += `
+            <div class="mb-4">
+                <p class="text-xs font-bold text-indigo-600 mb-2">Level ${index + 1}</p>
+                <table class="w-full text-left text-[11px]">
+                    <tr class="bg-slate-50 text-slate-500 uppercase tracking-widest border-b border-t">
+                        <th class="p-3">Mean (Measured)</th>
+                        <th class="p-3 text-center">SD</th>
+                        <th class="p-3 text-center">u(Rw) level (%)</th>
+                    </tr>
+                    <tr class="border-b">
+                        <td class="p-3 text-center font-montserrat">${rwMean.toFixed(4)}</td>
+                        <td class="p-3 text-center font-montserrat">${rwSd.toFixed(4)}</td>
+                        <td class="p-3 text-center font-montserrat font-bold text-amber-600">${rwU.toFixed(4)}</td>
+                    </tr>
+                </table>
+            </div>`;
+    });
+
+    if (rwDataLevels.length === 0) {
+        typeBHtml = `<p class="p-4 text-center text-xs text-slate-400">ไม่มีข้อมูล Type B</p>`;
+    }
+    typeBDiv.innerHTML = typeBHtml;
+
+    // เปิด Modal
+    document.getElementById('report-modal').classList.remove('hidden');
+}
+
+function closeReport() {
+    document.getElementById('report-modal').classList.add('hidden');
+}
+
+/* =========================================
+   5. BIAS EVALUATION MODULE (Type A)
+========================================= */
+function renderTabs() {
+    const container = document.getElementById('level-tabs-container');
+    if (!container) return;
+    const addButton = container.lastElementChild;
+    while (container.firstChild !== addButton) container.removeChild(container.firstChild);
+
+    labData.forEach((_, index) => {
+        const tabBtn = document.createElement('div');
+        tabBtn.className = 'group relative flex items-center';
+        tabBtn.innerHTML = `
+            <button onclick="switchTab(${index})" 
+                class="tab-btn px-6 py-3 rounded-2xl font-bold transition-all ${activeTab === index ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-500 hover:bg-slate-100'}" 
+                id="tab-${index}">Level ${index + 1}</button>
+            ${labData.length > 1 ? `
+                <button onclick="deleteLevel(${index})" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                    <span class="material-symbols-outlined text-[14px]">close</span>
+                </button>` : ''}
+        `;
+        container.insertBefore(tabBtn, addButton);
+    });
+    updateBiasDropdown();
+}
+
+function switchTab(index) {
+    activeTab = index;
+    renderTabs();
+    renderTable();
+}
+
+function addLevel() {
+    labData.push({ spiked: null, unspiked: 0, results: [null, null, null] });
+    activeTab = labData.length - 1;
+    renderTabs();
+    renderTable();
+}
+
+function deleteLevel(index) {
+    if (labData.length > 1) {
+        labData.splice(index, 1);
+        activeTab = Math.max(0, activeTab - 1);
+        renderTabs();
+        renderTable();
+    }
+}
+
+function renderTable() {
+    const data = labData[activeTab];
+    const tbody = document.getElementById('table-body');
+    const spikedInput = document.getElementById('spiked-conc');
+
+    if (!tbody || !spikedInput) return;
+
+    spikedInput.value = data.spiked != null ? data.spiked : '';
+    tbody.innerHTML = '';
+
+    data.results.forEach((val, i) => {
+        const spiked = parseFloat(data.spiked || 0);
+        let relBias = spiked !== 0 && val != null ? ((val - spiked) / spiked) * 100 : 0;
+
+        const colorClass = relBias >= 0
+            ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+            : 'text-rose-700 bg-rose-50 border-rose-200';
+
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr class="group">
+                <td class="px-4 py-1 text-[13px] font-black text-slate-300 font-montserrat align-middle">
+                    ${i + 1}
+                </td>
+
+                <td class="px-4 py-1 align-middle">
+                    <input
+                        type="number"
+                        step="any"
+                        value="${val != null ? val : ''}"
+                        oninput="updateValueDirect(${i}, this.value)"
+                        class="w-full min-w-[300px] bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 font-bold text-slate-700 placeholder:text-slate-300 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm"
+                        placeholder="0.0000"
+                    >
+                </td>
+
+                <td class="px-4 py-1 align-middle">
+                    <div class="relative mx-auto w-full max-w-[128px]">
+                        <select
+                            onchange="updateUnit(this.value)"
+                            class="w-full appearance-none bg-white border-2 border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-center font-black text-slate-700 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all shadow-sm hover:border-slate-300"
+                        >
+                            <option value="mg/L" ${selectedUnit === 'mg/L' ? 'selected' : ''}>mg/L</option>
+                            <option value="µg/L" ${selectedUnit === 'µg/L' ? 'selected' : ''}>µg/L</option>
+                            <option value="ng/L" ${selectedUnit === 'ng/L' ? 'selected' : ''}>ng/L</option>
+                            <option value="g/L" ${selectedUnit === 'g/L' ? 'selected' : ''}>g/L</option>
+                            <option value="%" ${selectedUnit === '%' ? 'selected' : ''}>%</option>
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+                            <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                        </span>
+                    </div>
+                </td>
+
+                <td class="px-4 py-1 text-center align-middle">
+                    <div id="bias-badge-${i}" class="inline-flex items-center justify-center min-w-[112px] px-4 py-3 rounded-2xl border-2 font-black text-[13px] font-montserrat ${colorClass} shadow-sm">
+                        ${relBias.toFixed(4)}
+                    </div>
+                </td>
+
+                <td class="px-2 py-1 text-right align-middle">
+                    <button
+                        onclick="removeRow(${i})"
+                        class="w-10 h-10 inline-flex items-center justify-center rounded-2xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all ${data.results.length <= 1 ? 'hidden' : ''}"
+                    >
+                        <span class="material-symbols-outlined text-[19px]">delete</span>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+
+    calculateAll();
+}
+
+function updateValueDirect(index, value) {
+    const numValue = value === '' ? null : parseFloat(value);
+    labData[activeTab].results[index] = numValue;
+    calculateAll();
+    
+    const spiked = labData[activeTab].spiked || 0;
+    const badge = document.getElementById(`bias-badge-${index}`);
+    if (badge && spiked !== 0 && numValue !== null) {
+        const relBias = ((numValue - spiked) / spiked * 100);
+        badge.innerText = relBias.toFixed(4) + '%';
+        badge.className = `inline-flex items-center justify-center min-w-[120px] px-3 py-1.5 rounded-lg border-2 font-black text-[13px] font-montserrat shadow-sm ${relBias >= 0 ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-rose-600 bg-rose-50 border-rose-200'}`;
+    }
+}
+
+function updateSpikedValue(val) {
+    labData[activeTab].spiked = val === '' ? null : parseFloat(val);
+    labData[activeTab].results.forEach((v, i) => updateValueDirect(i, v));
+}
+
+function addRow() {
+    labData[activeTab].results.push(null);
+    renderTable();
+}
+
+function removeRow(index) {
+    if(labData[activeTab].results.length > 1) {
+        labData[activeTab].results.splice(index, 1);
+        renderTable();
+    }
+}
+
+function calculateAll() {
+    let allBiases = [];
+    labData.forEach(level => {
+        const spiked = level.spiked || 0;
+        if (spiked !== 0) {
+            level.results.forEach(v => {
+                if (v !== null && !isNaN(v)) allBiases.push(((v - spiked) / spiked * 100));
+            });
+        }
+    });
+
+    const meanEl = document.getElementById('stat-mean');
+    const sdEl = document.getElementById('stat-sd');
+    const ubiasEl = document.getElementById('stat-ubias');
+
+    if (allBiases.length === 0) {
+        if (meanEl) meanEl.innerText = "0.0000";
+        if (sdEl) sdEl.innerText = "0.0000";
+        if (ubiasEl) ubiasEl.innerText = "0.0000";
+        return;
+    }
+
+    const meanBias = allBiases.reduce((a, b) => a + b, 0) / allBiases.length;
+    const sdBias = allBiases.length > 1 ? Math.sqrt(allBiases.map(x => Math.pow(x - meanBias, 2)).reduce((a, b) => a + b) / (allBiases.length - 1)) : 0;
+    
+    let uBias = (currentBiasOption === 'A') ? Math.sqrt(Math.pow(meanBias, 2) + Math.pow(sdBias, 2)) : Math.sqrt(Math.pow(meanBias, 2) + Math.pow(sdBias / Math.sqrt(allBiases.length), 2));
+
+    if (meanEl) meanEl.innerText = meanBias.toFixed(4);
+    if (sdEl) sdEl.innerText = sdBias.toFixed(4);
+    if (ubiasEl) ubiasEl.innerText = uBias.toFixed(4);
+}
+
+function setBiasOption(option) {
+    currentBiasOption = option;
+    
+    const btnA = document.getElementById('btn-option-a');
+    const btnB = document.getElementById('btn-option-b');
+    const textA = document.getElementById('text-option-a');
+    const textB = document.getElementById('text-option-b');
+    const iconA = document.getElementById('icon-option-a');
+    const iconB = document.getElementById('icon-option-b');
+    const badge = document.getElementById('current-option-badge');
+
+    if (option === 'A') {
+        if(btnA) btnA.className = "group p-6 rounded-2xl border-2 border-indigo-700 text-left bg-indigo-50/50 shadow-md transition-all duration-300";
+        if(textA) textA.className = "text-[11px] font-black text-indigo-700 uppercase tracking-widest";
+        if(iconA) { iconA.innerText = "check_circle"; iconA.className = "material-symbols-outlined text-indigo-700 text-2xl"; }
+
+        if(btnB) btnB.className = "group p-6 rounded-2xl border-2 border-slate-100 text-left bg-white transition-all duration-300";
+        if(textB) textB.className = "text-[11px] font-black text-slate-400 uppercase tracking-widest";
+        if(iconB) { iconB.innerText = "radio_button_unchecked"; iconB.className = "material-symbols-outlined text-slate-200 text-2xl"; }
+
+        if(badge) badge.innerText = "Option A Active";
+    } else {
+        if(btnB) btnB.className = "group p-6 rounded-2xl border-2 border-indigo-700 text-left bg-indigo-50/50 shadow-md transition-all duration-300";
+        if(textB) textB.className = "text-[11px] font-black text-indigo-700 uppercase tracking-widest";
+        if(iconB) { iconB.innerText = "check_circle"; iconB.className = "material-symbols-outlined text-indigo-700 text-2xl"; }
+
+        if(btnA) btnA.className = "group p-6 rounded-2xl border-2 border-slate-100 text-left bg-white transition-all duration-300";
+        if(textA) textA.className = "text-[11px] font-black text-slate-400 uppercase tracking-widest";
+        if(iconA) { iconA.innerText = "radio_button_unchecked"; iconA.className = "material-symbols-outlined text-slate-200 text-2xl"; }
+
+        if(badge) badge.innerText = "Option B Active";
+    }
+
+    if (typeof calculateAll === 'function') {
+        calculateAll();
+    }
+}
+
+/* =========================================
+   6. REPRODUCIBILITY MODULE (uRw)
+========================================= */
+function renderRwTabs() {
+    const container = document.getElementById('rw-tabs-container');
+    if (!container) return;
+    const addButton = container.querySelector('button[onclick="addRwLevel()"]');
+    
+    const oldTabs = container.querySelectorAll('.rw-tab-wrapper');
+    oldTabs.forEach(tab => tab.remove());
+
+    rwDataLevels.forEach((_, index) => {
+        const tabWrapper = document.createElement('div');
+        tabWrapper.className = 'rw-tab-wrapper group relative flex items-center';
+        tabWrapper.innerHTML = `
+            <button onclick="switchRwTab(${index})" 
+                class="px-6 py-3 rounded-xl font-black text-[12px] uppercase tracking-widest transition-all ${activeRwLevel === index ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white text-slate-400 border border-slate-100'}" 
+                id="rw-tab-${index}">Level ${index + 1}</button>
+            ${rwDataLevels.length > 1 ? `
+                <button onclick="deleteRwLevel(${index})" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="material-symbols-outlined text-[12px]">close</span>
+                </button>` : ''}
+        `;
+        container.insertBefore(tabWrapper, addButton);
+    });
+    updateBiasDropdown();
+}
+
+function switchRwTab(index) {
+    activeRwLevel = index;
+    renderRwTabs();
+    renderRwTable();
+}
+
+function addRwLevel() {
+    rwDataLevels.push({ results: [null, null, null] });
+    activeRwLevel = rwDataLevels.length - 1;
+    renderRwTabs();
+    renderRwTable();
+}
+
+function deleteRwLevel(index) {
+    if (rwDataLevels.length > 1) {
+        rwDataLevels.splice(index, 1);
+        activeRwLevel = Math.max(0, activeRwLevel - 1);
+        renderRwTabs();
+        renderRwTable();
+    }
+}
+
+function updateBiasDropdown() {
+    const selector = document.getElementById('bias-level-selector');
+    if (!selector) return;
+    selector.innerHTML = '<option value="" disabled selected>เลือก Bias Level...</option>';
+    labData.forEach((_, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `Bias Level ${i + 1}`;
+        selector.appendChild(option);
+    });
+}
+
+function importFromBias() {
+    const selector = document.getElementById('bias-level-selector');
+    const sourceIndex = parseInt(selector.value);
+    
+    if (isNaN(sourceIndex)) {
+        alert("กรุณาเลือก Level จาก Dropdown ก่อนครับ");
+        return;
+    }
+
+    const sourceData = labData[sourceIndex];
+    if (!sourceData || !sourceData.results || sourceData.results.length === 0) {
+        alert("ไม่พบข้อมูลผลการทดสอบใน Bias Level ที่เลือก");
+        return;
+    }
+
+    const spiked = sourceData.spiked;
+    if (!spiked || spiked === 0) {
+        alert("ค่า Spiked ในต้นทางเป็น 0 หรือว่างเปล่า ไม่สามารถคำนวณ Normalized Bias ได้");
+        return;
+    }
+
+    const importedResults = sourceData.results
+        .filter(r => r !== null && !isNaN(r))
+        .map(r => (r / spiked)); 
+    
+    if (importedResults.length === 0) {
+        alert("Bias Level นี้ไม่มีข้อมูลตัวเลขสำหรับการ Import ครับ");
+        return;
+    }
+
+    rwDataLevels[activeRwLevel].results = [...importedResults];
+    renderRwTable();
+    alert(`Import ข้อมูลและคำนวณ Normalized Bias เรียบร้อยแล้ว!`);
+}
+
+function renderRwTable() {
+    const tbody = document.getElementById('rw-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    const currentLevel = rwDataLevels[activeRwLevel];
+    currentLevel.results.forEach((val, i) => {
+        const displayValue = (val === null || isNaN(val)) ? '' : val;
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr class="group animate-in fade-in duration-200">
+                <td class="px-4 py-2 text-center text-xs font-black text-slate-300 font-montserrat">${i + 1}</td>
+                <td class="px-2">
+                    <input type="number" step="any" value="${displayValue}" 
+                        oninput="updateRwDirect(${i}, this.value)" 
+                        class="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-3 font-bold text-slate-700 focus:border-emerald-500 outline-none transition-all shadow-sm"
+                        placeholder="0.0000">
+                </td>
+                <td class="px-2 text-right">
+                    <button onclick="removeRwRow(${i})" class="text-slate-200 hover:text-rose-500 transition-colors">
+                        <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+    calculateRwLevelStats();
+}
+
+function updateRwDirect(index, value) {
+    rwDataLevels[activeRwLevel].results[index] = value === '' ? null : parseFloat(value);
+    calculateRwLevelStats();
+}
+
+function addRwRow() {
+    rwDataLevels[activeRwLevel].results.push(null);
+    renderRwTable();
+}
+
+function removeRwRow(index) {
+    if (rwDataLevels[activeRwLevel].results.length > 1) {
+        rwDataLevels[activeRwLevel].results.splice(index, 1);
+        renderRwTable();
+    }
+}
+
+function calculateRwLevelStats() {
+    let pooledResults = [];
+    
+    rwDataLevels.forEach(level => {
+        if (level.results) {
+            const validInLevel = level.results.filter(v => v !== null && !isNaN(v));
+            pooledResults = pooledResults.concat(validInLevel);
+        }
+    });
+
+    const meanEl = document.getElementById('res-rw-mean');
+    const sdEl = document.getElementById('res-rw-sd');
+    const urwEl = document.getElementById('res-u-rw');
+
+    if (pooledResults.length === 0) {
+        if (meanEl) meanEl.innerText = "0.0000";
+        if (sdEl) sdEl.innerText = "0.0000";
+        if (urwEl) urwEl.innerText = "0.0000";
+        return;
+    }
+
+    const mean = pooledResults.reduce((a, b) => a + b, 0) / pooledResults.length;
+    const sd = pooledResults.length > 1 ? 
+        Math.sqrt(pooledResults.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / (pooledResults.length - 1)) : 0;
+    
+    const urw = (sd !== 0) ? (sd / mean) * 100 : 0;
+
+    if (meanEl) meanEl.innerText = mean.toFixed(4);
+    if (sdEl) sdEl.innerText = sd.toFixed(4);
+    if (urwEl) urwEl.innerText = urw.toFixed(4);
+}
+
+/* =========================================
+   7. COMBINED BUDGET & DASHBOARD
+========================================= */
+function renderCombinedBudget() {
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return 0;
+        const val = parseFloat(el.innerText.replace(/[^0-9.-]/g, ''));
+        return isNaN(val) ? 0 : val;
+    };
+
+    const uBias = getVal('stat-ubias');
+    const uRw = getVal('res-u-rw');
+
+    const tbody = document.getElementById('combined-table-body');
+    const uc = Math.sqrt(Math.pow(uBias, 2) + Math.pow(uRw, 2));
+    const U_exp = uc * 2;
+
+    const totalSq = Math.pow(uBias, 2) + Math.pow(uRw, 2);
+    const contrRw = totalSq !== 0 ? (Math.pow(uRw, 2) / totalSq * 100) : 0;
+    const contrBias = totalSq !== 0 ? (Math.pow(uBias, 2) / totalSq * 100) : 0;
+
+    if (tbody) {
+        if (uBias === 0 && uRw === 0) {
+            tbody.innerHTML = '';
+        } else {
+            tbody.innerHTML = `
+                <tr class="hover:bg-indigo-50/30 transition-colors group">
+                    <td class="py-8 px-10 text-sm font-bold text-slate-700 tracking-tight">Method Bias (uBias)</td>
+                    <td class="py-8 px-4 text-center">
+                        <span class="px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black tracking-widest border border-indigo-100">u<sub>Bias</sub></span>
+                    </td>
+                    <td class="py-8 px-10 text-center font-montserrat font-bold text-amber-600 text-xl">${uBias.toFixed(4)}</td>
+                    <td class="py-8 px-10 text-center font-black text-slate-400 group-hover:text-indigo-600 transition-colors">${contrBias.toFixed(1)}%</td>
+                </tr>
+                <tr class="hover:bg-indigo-50/30 transition-colors group">
+                    <td class="py-8 px-10 text-sm font-bold text-slate-700 tracking-tight">Reproducibility (uRw)</td>
+                    <td class="py-8 px-4 text-center">
+                        <span class="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black tracking-widest border border-blue-100">u<sub>Rw</sub></span>
+                    </td>
+                    <td class="py-8 px-10 text-center font-montserrat font-bold text-amber-600 text-xl">${uRw.toFixed(4)}</td>
+                    <td class="py-8 px-10 text-center font-black text-slate-400 group-hover:text-indigo-600 transition-colors">${contrRw.toFixed(1)}%</td>
+                </tr>
+            `;
+        }
+    }
+
+    if (document.getElementById('res-combined-uc')) 
+        document.getElementById('res-combined-uc').innerText = uc.toFixed(4) + "%";
+    if (document.getElementById('res-combined-U')) 
+        document.getElementById('res-combined-U').innerText = U_exp.toFixed(4) + "%";
+
+    if (window.MathJax && window.MathJax.typeset) MathJax.typeset();
+}
+
+function updateDashboardResults() {
+    const U_exp = parseFloat(document.getElementById('res-combined-U')?.innerText) || 0;
+    const ua_val = parseFloat(document.getElementById('res-rw-sd')?.innerText) || 0;
+    const ub_val = parseFloat(document.getElementById('stat-sd')?.innerText) || 0;
+    const y_val = parseFloat(document.getElementById('dash-input-y')?.value) || 0;
+
+    if (document.getElementById('dash-u-a')) document.getElementById('dash-u-a').innerText = ua_val.toFixed(4);
+    if (document.getElementById('dash-u-b')) document.getElementById('dash-u-b').innerText = ub_val.toFixed(4);
+    if (document.getElementById('dash-u-rel')) document.getElementById('dash-u-rel').innerText = U_exp.toFixed(4);
+
+    const displayRelU = document.getElementById('dash-display-rel-u');
+    if (displayRelU) displayRelU.innerText = U_exp.toFixed(4) + " %";
+
+    const reportElement = document.getElementById('dash-final-report');
+    const unit = selectedUnit || 'mg/L';
+
+    if (reportElement) {
+        if (y_val !== 0) {
+            const U_absolute = y_val * (U_exp / 100);
+            reportElement.innerText = `${y_val.toFixed(4)} ± ${U_absolute.toFixed(4)} ${unit}`;
+        } else {
+            reportElement.innerText = `0.0000 ± 0.0000 ${unit}`;
+        }
+    }
+
+    if (typeof renderDashboardChart === "function") {
+        renderDashboardChart();
+    }
+}
+
+function renderDashboardChart() {
+    const canvas = document.getElementById('budgetChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const uBias = parseFloat(document.getElementById('stat-ubias')?.innerText) || 0;
+    const uRw = parseFloat(document.getElementById('res-u-rw')?.innerText) || 0;
+    
+    const rwContr = Math.pow(uRw, 2);
+    const biasContr = Math.pow(uBias, 2);
+    const total = rwContr + biasContr;
+
+    const rwPercent = total > 0 ? (rwContr / total * 100) : 0;
+    const biasPercent = total > 0 ? (biasContr / total * 100) : 0;
+
+    if (window.myBudgetChart) {
+        window.myBudgetChart.destroy();
+    }
+
+    window.myBudgetChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Method Bias (uBias)', 'Reproducibility (uRw)'],
+            datasets: [{
+                data: [biasPercent, rwPercent],
+                backgroundColor: ['#6366f1', '#10b981'],
+                borderRadius: 20,
+                borderSkipped: false,
+                categoryPercentage: 0.8, 
+                barPercentage: 0.9
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    callbacks: {
+                        label: function(context) {
+                            return ` Contribution: ${context.raw.toFixed(2)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: (value) => value + '%',
+                        font: { size: 11, weight: '600' }
+                    },
+                    grid: { color: '#f1f5f9', drawBorder: false }
+                },
+                x: {
+                    ticks: {
+                        font: { size: 12, weight: 'bold', family: 'Montserrat' },
+                        color: '#64748b'
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+/* =========================================
+   8. DATA RECOVERY & API
+========================================= */
+function collectRecoveryPayload() {
+    return {
+        id: currentOriginalId || currentSavedId || Date.now().toString(),
+        sourceType: 'top-down',
+        topDownModule: document.body.dataset.page || 'validate',
+        userName: getInputValue('user-name-input'),
+        labNo: getInputValue('lab-no-input'), // 🌟 เพิ่มบรรทัดนี้เพื่อเก็บค่า Lab No.
+        testItem: getInputValue('test-item-input'),
+        groupName: getInputValue('group-name-input'),
+
+        selectedUnit: selectedUnit || 'mg/L',
+
+        dashboard: {
+            measuredValue: getInputValue('dash-input-y'),
+            methodBias: getTextValue('dash-u-a'),
+            reproducibility: getTextValue('dash-u-b'),
+            expandedU: getTextValue('dash-u-rel'),
+            finalReport: getTextValue('dash-final-report')
+        },
+        biasModule: {
+            activeTab,
+            currentBiasOption,
+            labData: cloneJSON(labData || [], []),
+            statMean: getTextValue('stat-mean'),
+            statSd: getTextValue('stat-sd'),
+            statUbias: getTextValue('stat-ubias')
+        },
+        rwModule: {
+            activeRwLevel,
+            rwDataLevels: cloneJSON(rwDataLevels || [], []),
+            mean: getTextValue('res-rw-mean'),
+            sd: getTextValue('res-rw-sd'),
+            urw: getTextValue('res-u-rw')
+        },
+        combinedModule: {
+            uc: getTextValue('res-combined-uc'),
+            U: getTextValue('res-combined-U')
+        },
+        savedAtClient: new Date().toISOString()
+    };
+}
+
+async function saveToSheets() {
+    const btn = document.getElementById('btn-save');
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+        }
+
+        const payload = collectRecoveryPayload();
+
+        if (!payload.labNo || !payload.userName || !payload.testItem || !payload.groupName) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วน (Lab No., Test Description, Operator Name และกลุ่มงาน) ก่อนบันทึกครับ');
+            return;
+        }
+
+        const finalPayload = {
+            ...payload,
+            id: Date.now().toString(), // บังคับสร้าง ID ใหม่ทุกครั้งที่บันทึก
+            originalId: currentOriginalId || payload.originalId || null,
+            isEditedFromHistory: !!currentOriginalId
+        };
+
+        const body = new URLSearchParams();
+        body.append('payload', JSON.stringify({
+            action: 'save',
+            ...finalPayload
+        }));
+
+        const response = await fetch(SCRIPT_URL, { method: 'POST', body });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            currentSavedId = result.id || finalPayload.id || '';
+            currentOriginalId = currentSavedId;
+            clearRecoveryDataRaw();
+            alert('บันทึกข้อมูลสำเร็จ');
+        } else {
+            alert('บันทึกไม่สำเร็จ: ' + (result.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Save error:', error);
+        alert('ไม่สามารถบันทึกข้อมูลได้');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+}
+
+async function fetchAllSavedRecords() {
+    try {
+        const res = await fetch(SCRIPT_URL);
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'Load list failed');
+        return json.items || [];
+    } catch (err) {
+        console.error('Load records error:', err);
+        alert('ไม่สามารถโหลดรายการที่บันทึกไว้ได้');
+        return [];
+    }
+}
+
+async function loadSavedRecordById(id, userName = '') {
+    try {
+        const url = `${SCRIPT_URL}?action=one&id=${encodeURIComponent(id)}&userName=${encodeURIComponent(userName)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+
+        if (json.status !== 'success' || !json.item || !json.item.data) {
+            throw new Error(json.message || 'Record not found');
+        }
+        
+        currentSavedId = json.item.data.id || id;
+        await loadRecoveryData(json.item.data);
+        alert('โหลดข้อมูลสำเร็จ');
+    } catch (err) {
+        console.error('Load one error:', err);
+        alert('ไม่สามารถโหลดข้อมูลกลับมาได้');
+    }
+}
+
+async function deleteSavedRecord(id, userName) {
+    try {
+        const body = new URLSearchParams();
+        body.append('payload', JSON.stringify({ action: 'delete', id, userName }));
+
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body });
+        const json = await res.json();
+
+        if (json.status === 'deleted') {
+            alert('ลบข้อมูลสำเร็จ');
+            return true;
+        } else {
+            alert('ลบไม่สำเร็จ: ' + (json.message || 'Unknown error'));
+            return false;
+        }
+    } catch (err) {
+        console.error('Delete error:', err);
+        alert('ไม่สามารถลบข้อมูลได้');
+        return false;
+    }
+}
+
+async function loadRecoveryData(data = null) {
+    let payload = data;
+
+    if (!payload) {
+        const raw = getRecoveryDataRaw();
+        if (!raw) return;
+
+        try {
+            payload = JSON.parse(raw);
+        } catch (err) {
+            console.error('Recovery parse error:', err);
+            clearRecoveryDataRaw();
+            return;
+        }
+    }
+
+    try {
+        console.log('🔄 Starting Data Recovery for:', payload.testItem);
+
+        setInputValue('test-item-input', payload.testItem || '');
+        setInputValue('lab-no-input', payload.labNo || ''); // 🌟 เพิ่มบรรทัดนี้เพื่อกู้คืนค่า Lab No.
+        setInputValue('user-name-input', payload.userName || '');
+        setInputValue('group-name-input', payload.groupName || '');
+
+        if (payload.dashboard) {
+            setInputValue('dash-input-y', payload.dashboard.measuredValue || '');
+        }
+
+        if (payload.biasModule) {
+            applyBiasModuleToState(payload.biasModule);
+        } else {
+            applyBiasModuleToState({
+                activeTab: payload.activeTab ?? 0,
+                currentBiasOption: payload.currentBiasOption || 'B',
+                labData: payload.labData || [{ spiked: null, unspiked: 0, results: [null, null, null] }]
+            });
+        }
+
+        await sleep(150);
+
+        if (payload.rwModule) {
+            applyRwModuleToState(payload.rwModule);
+        } else {
+            applyRwModuleToState({
+                activeRwLevel: payload.activeRwLevel ?? 0,
+                rwDataLevels: payload.rwDataLevels || [{ results: [null, null, null] }]
+            });
+        }
+
+        await sleep(150);
+
+        if (payload.selectedUnit) {
+            updateUnit(payload.selectedUnit);
+        } else {
+            updateUnit('mg/L');
+        }
+
+        refreshValidateDashboard();
+
+        currentSavedId = payload.id || currentSavedId || null;
+
+        if (!data) {
+            clearRecoveryDataRaw();
+        }
+
+        console.log('✅ Data Recovery Completed');
+    } catch (err) {
+        console.error('❌ Recovery Error:', err);
+        if (!data) clearRecoveryDataRaw();
+        alert('ไม่สามารถโหลดข้อมูลกลับมาได้สมบูรณ์');
+    }
+}
+
+async function showSavedRecordsInConsole() {
+    const items = await fetchAllSavedRecords();
+    console.table(items.map(item => ({
+        id: item.data?.id || item.data?.timestamp || '',
+        userName: item.userName,
+        testItem: item.testItem,
+        timestamp: item.timestamp
+    })));
+    return items;
+}
+
+// ทำให้ฟังก์ชันผูกกับ window เพื่อให้เรียกผ่าน onclick="window.savePDF()" ได้ชัวร์ๆ
+window.savePDF = function () {
+    const report = document.getElementById('report-pdf');
+    if (!report) {
+        alert('ไม่พบข้อมูล Report สำหรับพิมพ์');
+        return;
+    }
+
+    // กันการกดซ้ำจนซ้อนหลาย print-area
+    const oldPrintArea = document.getElementById('print-area');
+    if (oldPrintArea) oldPrintArea.remove();
+
+    // 1. โคลนตัว Report
+    const clone = report.cloneNode(true);
+
+    // 2. แปลง Canvas กราฟ เป็นรูปภาพ
+    const originalCanvas = document.getElementById('reportChart');
+    const cloneCanvas = clone.querySelector('#reportChart');
+
+    if (originalCanvas && cloneCanvas) {
+        try {
+            const imgData = originalCanvas.toDataURL('image/png', 1.0);
+            const img = document.createElement('img');
+            img.src = imgData;
+            img.alt = 'Report chart';
+            img.style.width = '100%';
+            img.style.height = 'auto';
+            img.style.maxHeight = '180px';
+            img.style.objectFit = 'contain';
+
+            cloneCanvas.parentNode.replaceChild(img, cloneCanvas);
+        } catch (error) {
+            console.error('Canvas export failed:', error);
+        }
+    }
+
+    // 3. สร้างพื้นที่สำหรับ Print
+    const printArea = document.createElement('div');
+    printArea.id = 'print-area';
+    printArea.appendChild(clone);
+    document.body.appendChild(printArea);
+
+    // ซ่อน Modal ชั่วคราว
+    const modal = document.getElementById('report-modal');
+    if (modal) modal.classList.add('hidden');
+
+    // ฟังก์ชันเก็บงานหลังพิมพ์
+    const cleanupAfterPrint = () => {
+        if (printArea && printArea.parentNode) {
+            printArea.parentNode.removeChild(printArea);
+        }
+        if (modal) modal.classList.remove('hidden');
+        window.removeEventListener('afterprint', cleanupAfterPrint);
+    };
+
+    window.addEventListener('afterprint', cleanupAfterPrint);
+
+    // fallback เผื่อบาง browser ไม่ยิง afterprint ตามคาด
+    setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+            cleanupAfterPrint();
+        }, 800);
+    }, 300);
+};
+
+// ฟังก์ชันดึงรายชื่อกลุ่มจาก Google Sheet มาหยอดลง Dropdown
+async function fetchGroupNames() {
+    const Group = {
+        groupname: "https://script.google.com/macros/s/AKfycbxGTd0cBP5L1q-bslUD3KuTVfQYIsdO2lzAmv5UxM4-20rJaGKZEnHoz2gukUH0K2F7/exec"
+    };
+    
+    const groupSelect = document.getElementById('group-name-input');
+    if (!groupSelect) return false;
+
+    try {
+        // 🚨 ปรับปรุงขา Fetch: บังคับเปิด redirect: "follow" เพื่อป้องกัน CORS Error จากเซิร์ฟเวอร์ Google
+        const response = await fetch(`${Group.groupname}?action=getGroups`, {
+            method: "GET",
+            redirect: "follow"
+        });
+        
+        const result = await response.json();
+
+        if (result.status === "success" && Array.isArray(result.groups)) {
+            // ล้างข้อความโหลดดิ้งเดิมออก
+            groupSelect.innerHTML = '<option value="" disabled selected>-- เลือกกลุ่มงานของคุณ --</option>';
+            
+            // นำรายชื่อกลุ่มจาก Sheet มาสร้างเป็นตัวเลือก <option>
+            result.groups.forEach(group => {
+                if (!group) return;
+                const opt = document.createElement('option');
+                opt.value = group;
+                opt.textContent = group;
+                groupSelect.appendChild(opt);
+            });
+            
+            console.log("✨ โหลดรายชื่อกลุ่มงานลง Dropdown เรียบร้อย!");
+            return true; // คืนสถานะเพื่อบอกระบบหลักว่า Dropdown พร้อมทำงานแล้ว
+        } else {
+            groupSelect.innerHTML = '<option value="" disabled selected>ไม่พบข้อมูลกลุ่มงาน</option>';
+            return false;
+        }
+    } catch (err) {
+        console.error("❌ เกิดข้อผิดพลาดในการโหลดชื่อกลุ่ม:", err);
+        groupSelect.innerHTML = '<option value="" disabled selected>โหลดข้อมูลกลุ่มล้มเหลว</option>';
+        return false;
+    }
+}
+/* ==========================================================================
+   1. LIFECYCLE CONTROLLER (เวอร์ชันแก้ไขปัญหา Race Condition)
+   ========================================================================== */
+window.addEventListener("load", async () => {
+    console.log("🚀 ระบบกำลังเริ่มโหลดข้อมูลทั้งหมด...");
+
+    // 1. โหลดข้อมูลพื้นฐานที่ไม่กระทบโครงสร้าง Dropdown
+    if (typeof initVisitorCounter === 'function') initVisitorCounter();
+    if (typeof fetchIupacData === 'function') await fetchIupacData();
+    if (typeof fetchAllData === 'function') await fetchAllData();
+    
+    // 2. 🔥 บังคับดึงรายชื่อกลุ่มงานจาก Google Sheets และ "รอ (await)" จนแผง <option> สร้างเสร็จใน DOM นิ่งสนิท
+    if (typeof fetchGroupNames === 'function') {
+        await fetchGroupNames();
+    }
+
+    // 3. หลังจากตัวเลือกกลุ่มงานฝังลงใน UI ครบแล้ว จึงปล่อยให้ระบบทำการกู้คืนประวัติมาหยอดค่าลงช่อง
+    if (typeof loadRecoveryData === 'function') {
+        await loadRecoveryData(); 
+    }
+
+    console.log("✨ โหลดข้อมูลกลุ่มงานและกู้คืนสถานะตามลำดับสำเร็จ พร้อมใช้งาน 100%!");
+});
+
+
+
+// 2. ฟังก์ชัน จัดการ Popup Report a Problem
+const CONFIG = {
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+};
+
+const overlay = document.getElementById("reportOverlay");
+const form = document.getElementById("reportForm");
+const submitBtn = document.getElementById("submitBtn");
+const statusBox = document.getElementById("statusBox");
+const closeBtn = document.getElementById("closeReportModal");
+const cancelBtn = document.getElementById("cancelBtn");
+const reportProblemLink = document.getElementById("reportProblemLink");
+const pageInput = document.getElementById("report-page");
+
+function openReportModal() {
+    if (!overlay || !pageInput) return;
+    pageInput.value = window.location.pathname || window.location.href;
+    overlay.hidden = false;
+
+    setTimeout(() => {
+        document.getElementById("report-name")?.focus();
+    }, 30);
+}
+
+function closeReportModal() {
+    if (!overlay || !form || !statusBox) return;
+    overlay.hidden = true;
+    form.reset();
+    clearStatus();
+}
+
+function showStatus(message, type) {
+    if (!statusBox) return;
+    statusBox.className = `report-status show ${type}`;
+    statusBox.textContent = message;
+}
+
+function clearStatus() {
+    if (!statusBox) return;
+    statusBox.className = "report-status";
+    statusBox.textContent = "";
+}
+
+function validateEmail(email) {
+    return /^\S+@\S+\.\S+$/.test(email);
+}
+
+// ผูกการคลิกเมนู Report a problem ให้เปิด Popup
+if (reportProblemLink) {
+    reportProblemLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        openReportModal();
+    });
+}
+
+if (closeBtn) closeBtn.addEventListener("click", closeReportModal);
+if (cancelBtn) cancelBtn.addEventListener("click", closeReportModal);
+
+// กดพื้นที่ว่างข้างนอก (overlay) เพื่อปิด Popup
+if (overlay) {
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+            closeReportModal();
+        }
+    });
+}
+
+// กดปุ่ม ESC เพื่อปิด Popup
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay && !overlay.hidden) {
+        closeReportModal();
+    }
+});
+
+// จัดการตอนกดปุ่ม Submit Form
+if (form) {
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearStatus();
+
+        const data = {
+            name: form.name.value.trim(),
+            email: form.email.value.trim(),
+            page: form.page.value.trim(),
+            description: form.description.value.trim(),
+            timestamp: new Date().toISOString()
+        };
+
+        if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
+        if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
+        if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
+        if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
+        if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Submitting...";
+        }
+
+        try {
+            await fetch(CONFIG.scriptUrl, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(data)
+            });
+
+            showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+            setTimeout(() => {
+                closeReportModal();
+            }, 1200);
+
+        } catch (error) {
+            showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Submit";
+            }
+        }
+    });
+}
+// 🌟 เพิ่มตัวแปรสำหรับตั้งค่า ID ของห้องปฏิบัติการ (สามารถเปลี่ยนชื่อเวอร์ชันเพื่อ Reset เริ่มนับ 1 ใหม่ได้อิสระ)
+const VISITOR_COUNTER_ID = 'ainswertainty-validate-v1'; 
+
+/**
+ * ฟังก์ชันสำหรับนับและแสดงจำนวนผู้เข้าชมระบบแบบ Real-time ผ่าน CounterAPI
+ */
+async function initVisitorCounter() {
+  const countEl = document.getElementById('visitor-count');
+  if (!countEl) return;
+
+  try {
+    // ใช้คำสั่งสากลคุมแคช และชี้ลิงก์ตรงไปยังชื่อ ID 
+    const cacheBuster = Date.now();
+    const url = `https://api.counterapi.dev/v1/ainswertainty/${VISITOR_COUNTER_ID}/up?cb=${cacheBuster}`;
+    
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("CounterAPI response error");
+    
+    const data = await res.json();
+    
+    // ดักจับโครงสร้าง JSON ที่ CounterAPI ส่งกลับมาอย่างครอบคลุม
+    const finalCount = data.count ?? data.data ?? null;
+    
+    if (finalCount !== null) {
+      countEl.textContent = Number(finalCount).toLocaleString();
+    } else {
+      countEl.textContent = 'Online';
+    }
+  } catch (err) {
+    // ป้องกันหน้าจอขึ้น Error หากเซิร์ฟเวอร์ CounterAPI ปลายทางมีสภาวะหน่วงชั่วคราว
+    countEl.textContent = 'Online';
+    console.error('Counter load failed:', err);
+  }
+}
+</script>
+ 
+</body>
+</html>
