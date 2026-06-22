@@ -1343,12 +1343,10 @@ function drawBarChart(filteredPriorityItems) {
   let labels = [];
   let values = [];
 
-  // 🔥 ใช้ค่าอาร์เรย์ที่ส่งผ่านตรงมาจากตารางคัดกรอง + การกดปุ่ม Sort ด้านขวามือ
   if (filteredPriorityItems && Array.isArray(filteredPriorityItems)) {
     labels = filteredPriorityItems.map(item => item.name);
     values = filteredPriorityItems.map(item => item.value);
   } else {
-    // กรณีกันเหนียวช่วงเริ่มต้นรันเว็บ
     const latestMap = {};
     allData.forEach(d => {
       const name = d.testItem ? d.testItem.toString().trim() : "";
@@ -1363,13 +1361,9 @@ function drawBarChart(filteredPriorityItems) {
 
   if (priorityChart) priorityChart.destroy();
 
-  const gradientNormal = ctx.createLinearGradient(0, 0, 0, 300);
-  gradientNormal.addColorStop(0, 'rgba(56, 189, 248, 0.85)');  
-  gradientNormal.addColorStop(1, 'rgba(30, 64, 175, 0.45)');   
-
-  const gradientExceed = ctx.createLinearGradient(0, 0, 0, 300);
-  gradientExceed.addColorStop(0, 'rgba(244, 63, 94, 0.85)');   
-  gradientExceed.addColorStop(1, 'rgba(159, 18, 57, 0.45)');   
+  // 🔥 เปลี่ยนเป็นสีทึบแน่น 100% (Solid Color) ไม่จาง ไม่โปร่งแสง
+  const colorNormal = '#06b6d4'; // ฟ้านีออนเข้ม (Electric Cyan)
+  const colorExceed = '#dc2626'; // แดงสด (Crimson Red Alert)
 
   priorityChart = new Chart(ctx, {
     type: "bar",
@@ -1378,43 +1372,35 @@ function drawBarChart(filteredPriorityItems) {
       datasets: [{
         label: "%Relative Uncertainty ล่าสุด",
         data: values,
-        backgroundColor: values.map((v, i) => v > getTarget(labels[i]) ? gradientExceed : gradientNormal),
-        borderColor: values.map((v, i) => v > getTarget(labels[i]) ? '#f43f5e' : '#38bdf8'),
-        borderWidth: 1.5,
-        borderRadius: 8,
-        barPercentage: labels.length === 1 ? 0.22 : 0.48
+        backgroundColor: values.map((v, i) => v > getTarget(labels[i]) ? colorExceed : colorNormal),
+        borderColor: values.map((v, i) => v > getTarget(labels[i]) ? '#991b1b' : '#0891b2'),
+        borderWidth: 2, // เพิ่มความหนาเส้นขอบ
+        borderRadius: 6,
+        barPercentage: labels.length === 1 ? 0.22 : 0.45
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 400, easing: 'easeOutQuart' },
+      animation: { duration: 400 },
       plugins: {
         legend: { display: false },
         datalabels: {
           anchor: 'end',
           align: 'top',
-          offset: 4,
+          offset: 5,
           formatter: v => Number(v).toFixed(2) + '%',
-          color: '#334155',
-          font: { family: 'Kanit', weight: '600', size: 10 }
+          color: '#0f172a', // ปรับสีตัวเลขให้เข้มจัด (Slate 900)
+          font: { family: 'Kanit', weight: '800', size: 12 } // ขยายขนาดฟอนต์ตัวเลขหนาขึ้น
         }
       },
       scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: '#475569', font: { family: 'Kanit', size: 10 } }
-        },
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(148, 163, 184, 0.12)' },
-          ticks: { color: '#64748b', callback: v => v + '%' }
-        }
+        x: { grid: { display: false }, ticks: { color: '#0f172a', font: { family: 'Kanit', size: 11, weight: '700' } } }, // ฟอนต์แกน X เข้มชัด
+        y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.25)' }, ticks: { color: '#334155', font: { weight: '600' }, callback: v => v + '%' } }
       }
     }
   });
 }
-
 function renderTables(map) {
   let allItems = [];
   
@@ -1712,25 +1698,20 @@ function updateGroupChart(filteredItems) {
 
   if (groupAnalyticsChart) groupAnalyticsChart.destroy();
 
-  // 🔥 สรรค์สร้างเฉดสี Gradient ล้ำสมัยธีมน้ำทะเล-มรกตสิ่งแวดล้อม (วล.) สำหรับกราฟล่าง
-  const gradientNormal = ctx.createLinearGradient(0, 0, 0, 320);
-  gradientNormal.addColorStop(0, 'rgba(16, 185, 129, 0.85)');  // Mint Emerald Green
-  gradientNormal.addColorStop(1, 'rgba(13, 148, 136, 0.45)');  // Deep Teal Analytics
-
-  const gradientExceed = ctx.createLinearGradient(0, 0, 0, 320);
-  gradientExceed.addColorStop(0, 'rgba(225, 29, 72, 0.85)');   // Rose Red Alert
-  gradientExceed.addColorStop(1, 'rgba(144, 12, 63, 0.45)');   // Dark Wine Red
+  // 🔥 ใช้เนื้อสีแน่นเข้มเต็มสตรีม สังเกตง่ายจากระยะไกล
+  const colorNormal = '#10b981'; // เขียวมรกตสด (Vibrant Emerald)
+  const colorExceed = '#ec4899'; // ชมพูบานเย็นเข้ม (Deep Hot Pink Alert)
 
   groupAnalyticsChart = new Chart(ctx, {
     type: "bar",
     data: {
       labels,
       datasets: [{
-        label: "ค่า %Uncertainty ล่าسب",
+        label: "ค่า %Uncertainty ล่าสุด",
         data: values,
-        backgroundColor: values.map((v, i) => v > getTarget(labels[i]) ? gradientExceed : gradientNormal),
-        borderColor: values.map((v, i) => v > getTarget(labels[i]) ? '#e11d74' : '#10b981'),
-        borderWidth: 1.2,
+        backgroundColor: values.map((v, i) => v > getTarget(labels[i]) ? colorExceed : colorNormal),
+        borderColor: values.map((v, i) => v > getTarget(labels[i]) ? '#be185d' : '#047857'),
+        borderWidth: 2, // เส้นขอบคมชัด
         borderRadius: 6,
         barPercentage: labels.length === 1 ? 0.22 : 0.52
       }]
@@ -1738,28 +1719,21 @@ function updateGroupChart(filteredItems) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 600 },
+      animation: { duration: 400 },
       plugins: {
         legend: { display: false },
         datalabels: {
           anchor: 'end',
           align: 'top',
-          offset: 3,
+          offset: 4,
           formatter: v => Number(v).toFixed(2) + '%',
-          color: '#475569',
-          font: { family: 'Kanit', weight: '600', size: 10 }
+          color: '#0f172a',
+          font: { family: 'Kanit', weight: '800', size: 11 } // ตัวเลขหนาเข้มเด่นชัด
         }
       },
       scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: '#475569', font: { family: 'Kanit', size: 11 } }
-        },
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(148, 163, 184, 0.12)' },
-          ticks: { color: '#64748b', callback: v => v + '%' }
-        }
+        x: { grid: { display: false }, ticks: { color: '#0f172a', font: { family: 'Kanit', size: 11, weight: '700' } } }, // อักษรแกน X หนาชัดเจน
+        y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.25)' }, ticks: { color: '#334155', font: { weight: '600' }, callback: v => v + '%' } }
       }
     }
   });
