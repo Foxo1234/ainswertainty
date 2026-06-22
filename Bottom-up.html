@@ -3120,7 +3120,7 @@ function applyUnitToEquipmentUI(id, eqType, unitRaw) {
 
     if (eqType === 'meter') {
         // ย้ายหน่วยไปไว้ที่หัวข้อใหญ่
-        setText(document.getElementById(`${id}-ttl-m-acc`), `1. Accuracy${suffix}`);
+        setText(document.getElementById(`${id}-ttl-m-acc`), `1. Accuracy / Difference ${suffix}`);
         setText(document.getElementById(`${id}-ttl-m-res`), `2. Resolution${suffix}`);
         setText(document.getElementById(`${id}-lbl-m-val`), `Value ที่อ่านได้${suffix}`);
         setText(document.getElementById(`${id}-lbl-m-ui`), `Total uᵢ${suffix}`);
