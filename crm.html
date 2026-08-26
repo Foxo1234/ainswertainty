@@ -3324,32 +3324,32 @@ const VISITOR_COUNTER_ID = 'ainswertainty-crm-v1';
  * ฟังก์ชันสำหรับนับและแสดงจำนวนผู้เข้าชมระบบแบบ Real-time ผ่าน CounterAPI
  */
 async function initVisitorCounter() {
-  const countEl = document.getElementById('visitor-count');
-  if (!countEl) return;
+    const countEl = document.getElementById('visitor-count');
+    if (!countEl) return;
+    
+    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
+    let pageName = window.location.pathname.split('/').pop();
+    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
 
-  try {
-    // ใช้คำสั่งสากลคุมแคช และชี้ลิงก์ตรงไปยังชื่อ ID 
-    const cacheBuster = Date.now();
-    const url = `https://api.counterapi.dev/v1/ainswertainty/${VISITOR_COUNTER_ID}/up?cb=${cacheBuster}`;
+    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzpXGxPsjyZw0JzcyHBEaS7wcja44OKgzZIq9VTDgPEHnAMinTiZmECNekmOO_k2tvaTQ/exec';
     
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("CounterAPI response error");
-    
-    const data = await res.json();
-    
-    // ดักจับโครงสร้าง JSON ที่ CounterAPI ส่งกลับมาอย่างครอบคลุม
-    const finalCount = data.count ?? data.data ?? null;
-    
-    if (finalCount !== null) {
-      countEl.textContent = Number(finalCount).toLocaleString();
-    } else {
-      countEl.textContent = 'Online';
+    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
+    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
+
+    try {
+        const res = await fetch(targetURL);
+        const data = await res.json();
+        
+        if (data.status === 'success' && data.count) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
+            countEl.innerText = "Online";
+        }
+    } catch (err) {
+        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+        countEl.innerText = "Online";
     }
-  } catch (err) {
-    // ป้องกันหน้าจอขึ้น Error หากเซิร์ฟเวอร์ CounterAPI ปลายทางมีสภาวะหน่วงชั่วคราว
-    countEl.textContent = 'Online';
-    console.error('Counter load failed:', err);
-  }
 }
 </script>
  
