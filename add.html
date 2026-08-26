@@ -780,6 +780,7 @@
 </div>
 
 <script>
+  // 1. ตั้งค่า URL ต่างๆ
   const SHEET_URLS = {
     chemical: "https://script.google.com/macros/s/AKfycbwsGhP991w7pEcMnPI_5HFmNk3QU9fFA9_jZw0RRplUXjuS2SQD5OEFicfFmS-if42u5A/exec",
     instrument: "https://script.google.com/macros/s/AKfycbxsOLcZ1FHTu3hJWZJ0DlLgKZxQoolytBZBlA31EX4yDSPJopCzBmoA1Ihi4KoIi6yM/exec",
@@ -791,6 +792,7 @@
     scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
   };
 
+  // 2. ดึง DOM Elements
   const categorySelect = document.getElementById('categorySelect');
   const mainForm = document.getElementById('mainForm');
   const mainSubmitBtn = document.getElementById('mainSubmitBtn');
@@ -805,6 +807,7 @@
 
   function showToast(message, isError = false) {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     toast.innerText = message;
     toast.style.background = isError ? '#dc3545' : '#28a745';
     toast.style.display = 'block';
@@ -814,6 +817,7 @@
   }
 
   async function fetchSuggestions() {
+    if (!categorySelect || !nameSuggestions) return;
     const cat = categorySelect.value;
     const url = SHEET_URLS[cat];
     nameSuggestions.innerHTML = '';
@@ -861,14 +865,15 @@
   }
 
   function toggleFields() {
+    if (!categorySelect) return;
     const cat = categorySelect.value;
-    document.getElementById('fieldsInstrument').style.display = (cat === 'instrument') ? 'grid' : 'none';
-    document.getElementById('fieldsGlassware').style.display = (cat === 'glassware') ? 'grid' : 'none';
-    document.getElementById('fieldsChemical').style.display = (cat === 'chemical') ? 'grid' : 'none';
-    document.getElementById('fieldsAutopipette').style.display = (cat === 'autopipette') ? 'grid' : 'none';
+    if (document.getElementById('fieldsInstrument')) document.getElementById('fieldsInstrument').style.display = (cat === 'instrument') ? 'grid' : 'none';
+    if (document.getElementById('fieldsGlassware')) document.getElementById('fieldsGlassware').style.display = (cat === 'glassware') ? 'grid' : 'none';
+    if (document.getElementById('fieldsChemical')) document.getElementById('fieldsChemical').style.display = (cat === 'chemical') ? 'grid' : 'none';
+    if (document.getElementById('fieldsAutopipette')) document.getElementById('fieldsAutopipette').style.display = (cat === 'autopipette') ? 'grid' : 'none';
 
     const labelId = document.getElementById('labelId');
-    labelId.innerText = (cat === 'chemical') ? 'Lot No.' : 'ID No.';
+    if (labelId) labelId.innerText = (cat === 'chemical') ? 'Lot No.' : 'ID No.';
 
     fetchSuggestions();
   }
@@ -878,8 +883,10 @@
     if (!url) return false;
 
     try {
-      mainSubmitBtn.disabled = true;
-      mainSubmitBtn.innerText = "กำลังซิงค์ข้อมูล...";
+      if (mainSubmitBtn) {
+        mainSubmitBtn.disabled = true;
+        mainSubmitBtn.innerText = "กำลังซิงค์ข้อมูล...";
+      }
 
       await fetch(url, {
         method: 'POST',
@@ -895,56 +902,62 @@
       showToast("ส่งข้อมูลไม่สำเร็จ", true);
       return false;
     } finally {
-      mainSubmitBtn.disabled = false;
-      mainSubmitBtn.innerText = "บันทึกข้อมูลและส่งไปยัง Google Sheet";
+      if (mainSubmitBtn) {
+        mainSubmitBtn.disabled = false;
+        mainSubmitBtn.innerText = "บันทึกข้อมูลและส่งไปยัง Google Sheet";
+      }
     }
   }
 
-  mainForm.addEventListener('submit', async (e) => {
+  // ผูก Event การเปลี่ยนหมวดหมู่
+  categorySelect?.addEventListener('change', toggleFields);
+
+  // ผูก Event การ Submit ฟอร์มหลัก
+  mainForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const cat = categorySelect.value;
-    const nameValue = document.getElementById('nameInput').value;
+    const nameValue = document.getElementById('nameInput')?.value || '';
 
     const newItem = {
       category: cat,
-      id: document.getElementById('idInput').value,
-      lot: document.getElementById('idInput').value,
+      id: document.getElementById('idInput')?.value || '',
+      lot: document.getElementById('idInput')?.value || '',
       instrument_name: nameValue,
       chem_name: nameValue,
       glassware_name: nameValue,
       autopipette_name: nameValue,
       name: nameValue,
-      note: document.getElementById('noteInput').value,
+      note: document.getElementById('noteInput')?.value || '',
       timestamp: new Date().toLocaleString()
     };
 
     if (cat === 'instrument') {
-      newItem.accuracy = document.getElementById('instAcc').value;
-      newItem.resolution = document.getElementById('instRes').value;
-      newItem.unit = document.getElementById('instUnit').value;
+      newItem.accuracy = document.getElementById('instAcc')?.value || '';
+      newItem.resolution = document.getElementById('instRes')?.value || '';
+      newItem.unit = document.getElementById('instUnit')?.value || '';
     } else if (cat === 'glassware') {
-      newItem.tolerance = document.getElementById('glassTol').value;
-      newItem.capacity = document.getElementById('glassCap').value;
-      newItem.unit = document.getElementById('glassUnit').value;
-      newItem.uncertainty = document.getElementById('glassUnc').value;
-      newItem.model = document.getElementById('modelInput').value;
+      newItem.tolerance = document.getElementById('glassTol')?.value || '';
+      newItem.capacity = document.getElementById('glassCap')?.value || '';
+      newItem.unit = document.getElementById('glassUnit')?.value || '';
+      newItem.uncertainty = document.getElementById('glassUnc')?.value || '';
+      newItem.model = document.getElementById('modelInput')?.value || '';
     } else if (cat === 'chemical') {
-      newItem.concentration = document.getElementById('chemConc').value;
-      newItem.unit = document.getElementById('chemUnit').value;
-      newItem.uncertainty = document.getElementById('chemUnc').value;
-      newItem.k_factor = document.getElementById('chemK').value;
-      newItem.expiryDate = document.getElementById('chemExp').value;
+      newItem.concentration = document.getElementById('chemConc')?.value || '';
+      newItem.unit = document.getElementById('chemUnit')?.value || '';
+      newItem.uncertainty = document.getElementById('chemUnc')?.value || '';
+      newItem.k_factor = document.getElementById('chemK')?.value || '';
+      newItem.expiryDate = document.getElementById('chemExp')?.value || '';
     } else if (cat === 'autopipette') {
-      newItem.brand = document.getElementById('autoBrand').value;
-      newItem.capacity = document.getElementById('autoCap').value;
-      newItem.systematic = document.getElementById('autoSyst').value;
-      newItem.unit = document.getElementById('autoUnit').value;
+      newItem.brand = document.getElementById('autoBrand')?.value || '';
+      newItem.capacity = document.getElementById('autoCap')?.value || '';
+      newItem.systematic = document.getElementById('autoSyst')?.value || '';
+      newItem.unit = document.getElementById('autoUnit')?.value || '';
     }
 
     await sendToGoogleSheet(newItem, cat);
     mainForm.reset();
 
-    if (cat === 'chemical') {
+    if (cat === 'chemical' && document.getElementById('chemK')) {
       document.getElementById('chemK').value = '2';
     }
 
@@ -952,141 +965,158 @@
     toggleFields();
   });
 
+  // ==========================================
+  // 3. ฟังก์ชันนับยอดผู้เข้าชม (Visitor Counter)
+  // ==========================================
   async function initVisitorCounter() {
     const countEl = document.getElementById('visitor-count');
     if (!countEl) return;
-    
-    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
-    let pageName = window.location.pathname.split('/').pop();
-    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
 
-    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
+    const pageName = window.location.pathname.split('/').pop() || 'index.html';
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyir5H1_bM6hfIU6iuPk0huah_MCye_FBfQ_0YxvzXgoo-RLcfWl2g2Aw2HuESv4T2aJw/exec';
-    
-    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
-    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
 
     try {
-        const res = await fetch(targetURL);
-        const data = await res.json();
-        
-        if (data.status === 'success' && data.count) {
-            countEl.innerText = Number(data.count).toLocaleString();
-        } else {
-            countEl.innerText = "Online";
-        }
-    } catch (err) {
-        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+      const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
+      const data = await res.json();
+      
+      if (data && data.count !== undefined) {
+        countEl.innerText = Number(data.count).toLocaleString();
+      } else {
         countEl.innerText = "Online";
-    }
-}
-
-  const overlay = document.getElementById("reportOverlay");
-  const reportForm = document.getElementById("reportForm");
-  const reportSubmitBtn = document.getElementById("reportSubmitBtn");
-  const statusBox = document.getElementById("statusBox");
-  const closeBtn = document.getElementById("closeReportModal");
-  const cancelBtn = document.getElementById("cancelBtn");
-  const reportProblemLink = document.getElementById("reportProblemLink");
-  const pageInput = document.getElementById("report-page");
-  const firstReportField = document.getElementById("report-name");
-
-  let lastFocusedElement = null;
-
-  function openReportModal() {
-    lastFocusedElement = document.activeElement;
-    pageInput.value = window.location.pathname || window.location.href;
-    overlay.hidden = false;
-    clearStatus();
-    setTimeout(() => firstReportField.focus(), 0);
-  }
-
-  function closeReportModal() {
-    overlay.hidden = true;
-    reportForm.reset();
-    clearStatus();
-    if (lastFocusedElement) {
-      lastFocusedElement.focus();
+      }
+    } catch (err) {
+      console.warn('⚠️ Visitor counter error:', err);
+      countEl.innerText = "Online";
     }
   }
 
-  function showStatus(message, type) {
-    statusBox.className = `report-status show ${type}`;
-    statusBox.textContent = message;
-  }
+  // ==========================================
+  // 4. ระบบแจ้งปัญหา (Report Problem Modal)
+  // ==========================================
+  document.addEventListener("DOMContentLoaded", () => {
+    const overlay = document.getElementById("reportOverlay");
+    const reportForm = document.getElementById("reportForm");
+    const reportSubmitBtn = document.getElementById("reportSubmitBtn");
+    const statusBox = document.getElementById("statusBox");
+    const closeBtn = document.getElementById("closeReportModal");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const reportProblemLink = document.getElementById("reportProblemLink");
+    const pageInput = document.getElementById("report-page");
+    const firstReportField = document.getElementById("report-name");
 
-  function clearStatus() {
-    statusBox.className = "report-status";
-    statusBox.textContent = "";
-  }
+    let lastFocusedElement = null;
 
-  function validateEmail(email) {
-    return /^\S+@\S+\.\S+$/.test(email);
-  }
+    if (!overlay || !reportForm) return;
 
-  reportProblemLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    openReportModal();
-  });
-
-  closeBtn.addEventListener("click", closeReportModal);
-  cancelBtn.addEventListener("click", closeReportModal);
-
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) {
-      closeReportModal();
+    function showStatus(message, type) {
+      if (!statusBox) return;
+      statusBox.className = `report-status show ${type}`;
+      statusBox.textContent = message;
     }
-  });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !overlay.hidden) {
-      closeReportModal();
+    function clearStatus() {
+      if (!statusBox) return;
+      statusBox.className = "report-status";
+      statusBox.textContent = "";
     }
-  });
 
-  reportForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearStatus();
+    function openReportModal() {
+      lastFocusedElement = document.activeElement;
+      if (pageInput) {
+        pageInput.value = window.location.pathname.split('/').pop() || window.location.href;
+      }
+      overlay.hidden = false;
+      clearStatus();
+      setTimeout(() => firstReportField?.focus(), 0);
+    }
 
-    const data = {
-      name: reportForm.name.value.trim(),
-      email: reportForm.email.value.trim(),
-      page: reportForm.page.value.trim(),
-      description: reportForm.description.value.trim(),
-      timestamp: new Date().toISOString()
-    };
+    function closeReportModal() {
+      overlay.hidden = true;
+      reportForm.reset();
+      clearStatus();
+      if (lastFocusedElement) {
+        lastFocusedElement.focus();
+      }
+    }
 
-    if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
-    if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
-    if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
-    if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
-    if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+    function validateEmail(email) {
+      return /^\S+@\S+\.\S+$/.test(email);
+    }
 
-    reportSubmitBtn.disabled = true;
-    reportSubmitBtn.textContent = "Submitting...";
+    reportProblemLink?.addEventListener("click", (e) => {
+      e.preventDefault();
+      openReportModal();
+    });
 
-    try {
-      await fetch(CONFIG.scriptUrl, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify(data)
-      });
+    closeBtn?.addEventListener("click", closeReportModal);
+    cancelBtn?.addEventListener("click", closeReportModal);
 
-      showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
-      setTimeout(() => {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
         closeReportModal();
-      }, 1200);
-    } catch (error) {
-      showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
-    } finally {
-      reportSubmitBtn.disabled = false;
-      reportSubmitBtn.textContent = "Submit";
-    }
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !overlay.hidden) {
+        closeReportModal();
+      }
+    });
+
+    reportForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearStatus();
+
+      const data = {
+        name: reportForm.name?.value.trim(),
+        email: reportForm.email?.value.trim(),
+        page: reportForm.page?.value.trim(),
+        description: reportForm.description?.value.trim(),
+        timestamp: new Date().toISOString()
+      };
+
+      if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
+      if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
+      if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
+      if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
+      if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+
+      if (reportSubmitBtn) {
+        reportSubmitBtn.disabled = true;
+        reportSubmitBtn.textContent = "Submitting...";
+      }
+
+      try {
+        await fetch(CONFIG.scriptUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(data)
+        });
+
+        showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+        setTimeout(() => {
+          closeReportModal();
+        }, 1200);
+      } catch (error) {
+        showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
+      } finally {
+        if (reportSubmitBtn) {
+          reportSubmitBtn.disabled = false;
+          reportSubmitBtn.textContent = "Submit";
+        }
+      }
+    });
   });
 
+  // ==========================================
+  // 5. เรียกใช้งานตอนโหลดหน้าเว็บสำเร็จ (Window Load)
+  // ==========================================
   window.addEventListener('load', () => {
-    fetchSuggestions();
-    toggleFields();
+    if (typeof fetchSuggestions === 'function') fetchSuggestions();
+    if (typeof toggleFields === 'function') toggleFields();
     initVisitorCounter();
   });
 </script>
