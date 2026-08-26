@@ -3057,7 +3057,38 @@ async function loadRecoveryData(data = null) {
 }
 
 
-// ฟังก์ชันดึงรายชื่อกลุ่มจาก Google Sheet มาหยอดลง Dropdown
+// ==========================================
+// 1. ฟังก์ชันนับยอดผู้เข้าชม (Visitor Counter)
+// ==========================================
+async function initVisitorCounter() {
+    const countEl = document.getElementById('visitor-count');
+    if (!countEl) return;
+
+    const pageName = window.location.pathname.split('/').pop() || 'index.html';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyir5H1_bM6hfIU6iuPk0huah_MCye_FBfQ_0YxvzXgoo-RLcfWl2g2Aw2HuESv4T2aJw/exec';
+
+    try {
+        const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
+        
+        if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
+
+        const data = await res.json();
+        
+        if (data && data.count !== undefined) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
+            countEl.innerText = "Online";
+        }
+    } catch (err) {
+        console.warn('⚠️ Visitor counter error:', err);
+        countEl.innerText = "Online";
+    }
+}
+
+
+// ==========================================
+// 2. ฟังก์ชันดึงรายชื่อกลุ่มจาก Google Sheet
+// ==========================================
 async function fetchGroupNames() {
     const Group = {
         groupname: "https://script.google.com/macros/s/AKfycbxGTd0cBP5L1q-bslUD3KuTVfQYIsdO2lzAmv5UxM4-20rJaGKZEnHoz2gukUH0K2F7/exec"
@@ -3067,7 +3098,6 @@ async function fetchGroupNames() {
     if (!groupSelect) return false;
 
     try {
-        // 🚨 ปรับปรุงขา Fetch: บังคับเปิด redirect: "follow" เพื่อป้องกัน CORS Error จากเซิร์ฟเวอร์ Google
         const response = await fetch(`${Group.groupname}?action=getGroups`, {
             method: "GET",
             redirect: "follow"
@@ -3076,10 +3106,8 @@ async function fetchGroupNames() {
         const result = await response.json();
 
         if (result.status === "success" && Array.isArray(result.groups)) {
-            // ล้างข้อความโหลดดิ้งเดิมออก
             groupSelect.innerHTML = '<option value="" disabled selected>-- เลือกกลุ่มงานของคุณ --</option>';
             
-            // นำรายชื่อกลุ่มจาก Sheet มาสร้างเป็นตัวเลือก <option>
             result.groups.forEach(group => {
                 if (!group) return;
                 const opt = document.createElement('option');
@@ -3089,7 +3117,7 @@ async function fetchGroupNames() {
             });
             
             console.log("✨ โหลดรายชื่อกลุ่มงานลง Dropdown เรียบร้อย!");
-            return true; // คืนสถานะเพื่อบอกระบบหลักว่า Dropdown พร้อมทำงานแล้ว
+            return true;
         } else {
             groupSelect.innerHTML = '<option value="" disabled selected>ไม่พบข้อมูลกลุ่มงาน</option>';
             return false;
@@ -3100,39 +3128,13 @@ async function fetchGroupNames() {
         return false;
     }
 }
-// ✅ วิธีการเปิด Lifecycle ระบบที่ปลอดภัย (ในส่วนที่ 12 ของคุณ)
-window.addEventListener("load", async () => {
-    console.log("🚀 ระบบกำลังเริ่มโหลดข้อมูลทั้งหมด...");
 
-    // 1. เปิดการทำงานของฟังก์ชันพื้นฐานที่ทำงานแบบเบื้องหลัง (Background)
-    if (typeof initVisitorCounter === 'function') initVisitorCounter();
 
-    // 2. ดึงข้อมูล IUPAC และข้อมูลระบบหลัก (บังคับให้รอจนเสร็จ)
-    if (typeof fetchIupacData === 'function') await fetchIupacData();
-    if (typeof fetchAllData === 'function') await fetchAllData();
-    
-    // 3. ดึงชื่อกลุ่มงานจาก Google Sheet และบังคับให้ "รอจนสร้างตัวเลือกใน Dropdown เสร็จสิ้น"
-    if (typeof fetchGroupNames === 'function') {
-        await fetchGroupNames();
-    }
-
-    // 4. หน่วงเวลาสั้นๆ 100ms เพื่อให้เบราว์เซอร์จัดการโครงสร้าง DOM และ Dropdown ให้เสถียร
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 5. สเต็ปสุดท้าย: ตรวจสอบและดึงข้อมูลกู้คืนสถานะ (Recovery) มาหยอดลงฟิลด์ต่างๆ
-    if (typeof loadRecoveryData === 'function') {
-        const raw = getRecoveryDataRaw(); // เช็คค่าจาก Session/Local Storage ตัวเดิมของคุณ
-        if (raw) {
-            console.log("🔄 พบข้อมูลดิบในคลังระบบ กำลังเริ่มกู้คืนสถานะข้อมูล...");
-            // เรียกฟังก์ชันกู้คืนข้อมูล (ถ้าฟังก์ชัน loadRecoveryData ของคุณเป็น async สามารถใส่ await ข้างหน้าได้)
-            await loadRecoveryData(); 
-        }
-    }
-
-    console.log("✨ โหลดข้อมูลและกู้คืนสถานะ Group Name สำเร็จ พร้อมใช้งาน!");
-});
-
+// ==========================================
+// 3. ฟังก์ชันยูทิลิตี้ (Save PDF & Console Table)
+// ==========================================
 async function showSavedRecordsInConsole() {
+    if (typeof fetchAllSavedRecords !== 'function') return [];
     const items = await fetchAllSavedRecords();
     console.table(items.map(item => ({
         id: item.data?.id || item.data?.timestamp || '',
@@ -3143,8 +3145,6 @@ async function showSavedRecordsInConsole() {
     return items;
 }
 
-
-// ทำให้ฟังก์ชันผูกกับ window เพื่อให้เรียกผ่าน onclick="window.savePDF()" ได้ชัวร์ๆ
 window.savePDF = function() {
     const report = document.getElementById('report-pdf');
     if (!report) {
@@ -3152,134 +3152,119 @@ window.savePDF = function() {
         return;
     }
 
-    // 1. โคลน (Clone) ตัว Report เพื่อนำไปพ่นในหน้าต่างสำหรับ Print โดยไม่กระทบหน้าจอหลัก
     const clone = report.cloneNode(true);
-
-    // 2. แปลง Canvas กราฟ ให้กลายเป็นรูปภาพ (Image) เพื่อป้องกันกราฟหายตอน Print
     const originalCanvas = document.getElementById('reportChart');
     const cloneCanvas = clone.querySelector('#reportChart');
 
     if (originalCanvas && cloneCanvas) {
-        // ใช้ toDataURL เพื่อดึงภาพจาก Canvas
         const imgData = originalCanvas.toDataURL('image/png', 1.0); 
         const img = document.createElement('img');
         img.src = imgData;
-        
-        // จัดรูปแบบรูปภาพไม่ให้ล้นกระดาษ
         img.style.width = '100%';
         img.style.height = 'auto';
         img.style.maxHeight = '180px';
         img.style.objectFit = 'contain';
 
-        // แทนที่ Canvas ด้วยรูปภาพในโคลน
         cloneCanvas.parentNode.replaceChild(img, cloneCanvas);
     }
 
-    // 3. สร้าง Container ใหม่สำหรับ Print โดยให้ id="print-area" (ซึ่งจะสัมพันธ์กับ @media print ใน CSS ของคุณ)
     const printArea = document.createElement('div');
     printArea.id = 'print-area';
     printArea.appendChild(clone);
     document.body.appendChild(printArea);
 
-    // ซ่อน Modal ชั่วคราวเพื่อไม่ให้บังตอนสั่ง Print
     const modal = document.getElementById('report-modal');
     if (modal) modal.classList.add('hidden');
 
-    // 4. สั่ง Print (หน่วงเวลาเล็กน้อยเพื่อให้เบราว์เซอร์เรนเดอร์รูปกราฟเสร็จก่อน)
     setTimeout(() => {
-        window.print(); // เปิดหน้าต่าง Print/Save PDF ของเบราว์เซอร์
-        
-        // เมื่อพิมพ์หรือกด Save PDF เสร็จแล้ว ให้ลบ printArea ทิ้งและเปิด Modal กลับมาเหมือนเดิม
+        window.print();
         document.body.removeChild(printArea);
         if (modal) modal.classList.remove('hidden');
     }, 300);
 };
 
-// 2. ฟังก์ชัน จัดการ Popup Report a Problem
+
+// ==========================================
+// 4. ระบบแจ้งปัญหา (Report Problem Popup)
+// ==========================================
 const CONFIG = {
     scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
 };
 
-const overlay = document.getElementById("reportOverlay");
-const form = document.getElementById("reportForm");
-const submitBtn = document.getElementById("submitBtn");
-const statusBox = document.getElementById("statusBox");
-const closeBtn = document.getElementById("closeReportModal");
-const cancelBtn = document.getElementById("cancelBtn");
-const reportProblemLink = document.getElementById("reportProblemLink");
-const pageInput = document.getElementById("report-page");
+document.addEventListener("DOMContentLoaded", () => {
+    const overlay = document.getElementById("reportOverlay");
+    const form = document.getElementById("reportForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusBox = document.getElementById("statusBox");
+    const closeBtn = document.getElementById("closeReportModal");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const reportProblemLink = document.getElementById("reportProblemLink");
+    const pageInput = document.getElementById("report-page");
 
-function openReportModal() {
-    if (!overlay || !pageInput) return;
-    pageInput.value = window.location.pathname || window.location.href;
-    overlay.hidden = false;
+    if (!overlay || !form) return;
 
-    setTimeout(() => {
-        document.getElementById("report-name")?.focus();
-    }, 30);
-}
+    function showStatus(message, type) {
+        if (!statusBox) return;
+        statusBox.className = `report-status show ${type}`;
+        statusBox.textContent = message;
+    }
 
-function closeReportModal() {
-    if (!overlay || !form || !statusBox) return;
-    overlay.hidden = true;
-    form.reset();
-    clearStatus();
-}
+    function clearStatus() {
+        if (!statusBox) return;
+        statusBox.className = "report-status";
+        statusBox.textContent = "";
+    }
 
-function showStatus(message, type) {
-    if (!statusBox) return;
-    statusBox.className = `report-status show ${type}`;
-    statusBox.textContent = message;
-}
+    function openReportModal() {
+        if (pageInput) {
+            pageInput.value = window.location.pathname.split('/').pop() || window.location.href;
+        }
+        overlay.hidden = false;
 
-function clearStatus() {
-    if (!statusBox) return;
-    statusBox.className = "report-status";
-    statusBox.textContent = "";
-}
+        setTimeout(() => {
+            document.getElementById("report-name")?.focus();
+        }, 30);
+    }
 
-function validateEmail(email) {
-    return /^\S+@\S+\.\S+$/.test(email);
-}
+    function closeReportModal() {
+        overlay.hidden = true;
+        form.reset();
+        clearStatus();
+    }
 
-// ผูกการคลิกเมนู Report a problem ให้เปิด Popup
-if (reportProblemLink) {
-    reportProblemLink.addEventListener("click", (e) => {
+    function validateEmail(email) {
+        return /^\S+@\S+\.\S+$/.test(email);
+    }
+
+    reportProblemLink?.addEventListener("click", (e) => {
         e.preventDefault();
         openReportModal();
     });
-}
 
-if (closeBtn) closeBtn.addEventListener("click", closeReportModal);
-if (cancelBtn) cancelBtn.addEventListener("click", closeReportModal);
+    closeBtn?.addEventListener("click", closeReportModal);
+    cancelBtn?.addEventListener("click", closeReportModal);
 
-// กดพื้นที่ว่างข้างนอก (overlay) เพื่อปิด Popup
-if (overlay) {
     overlay.addEventListener("click", (e) => {
         if (e.target === overlay) {
             closeReportModal();
         }
     });
-}
 
-// กดปุ่ม ESC เพื่อปิด Popup
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay && !overlay.hidden) {
-        closeReportModal();
-    }
-});
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !overlay.hidden) {
+            closeReportModal();
+        }
+    });
 
-// จัดการตอนกดปุ่ม Submit Form
-if (form) {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         clearStatus();
 
         const data = {
-            name: form.name.value.trim(),
-            email: form.email.value.trim(),
-            page: form.page.value.trim(),
-            description: form.description.value.trim(),
+            name: form.name?.value.trim(),
+            email: form.email?.value.trim(),
+            page: form.page?.value.trim(),
+            description: form.description?.value.trim(),
             timestamp: new Date().toISOString()
         };
 
@@ -3298,6 +3283,7 @@ if (form) {
             await fetch(CONFIG.scriptUrl, {
                 method: "POST",
                 mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify(data)
             });
 
@@ -3315,42 +3301,41 @@ if (form) {
             }
         }
     });
-}
+});
 
-// 🌟 เพิ่มตัวแปรสำหรับตั้งค่า ID ของห้องปฏิบัติการ (สามารถเปลี่ยนชื่อเวอร์ชันเพื่อ Reset เริ่มนับ 1 ใหม่ได้อิสระ)
-const VISITOR_COUNTER_ID = 'ainswertainty-crm-v1'; 
 
-/**
- * ฟังก์ชันสำหรับนับและแสดงจำนวนผู้เข้าชมระบบแบบ Real-time ผ่าน CounterAPI
- */
-async function initVisitorCounter() {
-    const countEl = document.getElementById('visitor-count');
-    if (!countEl) return;
+// ==========================================
+// 5. ควบคุม Lifecycle การเปิดระบบ (Window Load)
+// ==========================================
+window.addEventListener("load", async () => {
+    console.log("🚀 ระบบกำลังเริ่มโหลดข้อมูลทั้งหมด...");
+
+    // 1. เปิดการทำงานของ Visitor Counter
+    if (typeof initVisitorCounter === 'function') initVisitorCounter();
+
+    // 2. ดึงข้อมูล IUPAC และข้อมูลระบบหลัก
+    if (typeof fetchIupacData === 'function') await fetchIupacData();
+    if (typeof fetchAllData === 'function') await fetchAllData();
     
-    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
-    let pageName = window.location.pathname.split('/').pop();
-    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
-
-    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzpXGxPsjyZw0JzcyHBEaS7wcja44OKgzZIq9VTDgPEHnAMinTiZmECNekmOO_k2tvaTQ/exec';
-    
-    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
-    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
-
-    try {
-        const res = await fetch(targetURL);
-        const data = await res.json();
-        
-        if (data.status === 'success' && data.count) {
-            countEl.innerText = Number(data.count).toLocaleString();
-        } else {
-            countEl.innerText = "Online";
-        }
-    } catch (err) {
-        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
-        countEl.innerText = "Online";
+    // 3. ดึงชื่อกลุ่มงานลง Dropdown
+    if (typeof fetchGroupNames === 'function') {
+        await fetchGroupNames();
     }
-}
+
+    // 4. หน่วงเวลา 100ms เพื่อความเสถียรของ DOM
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 5. กู้คืนข้อมูล Recovery State
+    if (typeof loadRecoveryData === 'function') {
+        const raw = typeof getRecoveryDataRaw === 'function' ? getRecoveryDataRaw() : null;
+        if (raw) {
+            console.log("🔄 พบข้อมูลดิบในคลังระบบ กำลังเริ่มกู้คืนสถานะข้อมูล...");
+            await loadRecoveryData(); 
+        }
+    }
+
+    console.log("✨ โหลดข้อมูลและกู้คืนสถานะ Group Name สำเร็จ พร้อมใช้งาน!");
+});
 </script>
  
 </body>
