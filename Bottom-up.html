@@ -5702,36 +5702,38 @@ async function loadRecoveryData() {
     }
 }
 
+// ==========================================
+// 1. ฟังก์ชัน นับยอด Visitor
+// ==========================================
 async function initVisitorCounter() {
     const countEl = document.getElementById('visitor-count');
     if (!countEl) return;
-    
-    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
-    let pageName = window.location.pathname.split('/').pop();
-    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
 
-    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzpXGxPsjyZw0JzcyHBEaS7wcja44OKgzZIq9VTDgPEHnAMinTiZmECNekmOO_k2tvaTQ/exec';
-    
-    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
-    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
+    const pageName = window.location.pathname.split('/').pop() || 'index.html';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyir5H1_bM6hfIU6iuPk0huah_MCye_FBfQ_0YxvzXgoo-RLcfWl2g2Aw2HuESv4T2aJw/exec';
 
     try {
-        const res = await fetch(targetURL);
+        const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
+        
+        if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
+
         const data = await res.json();
         
-        if (data.status === 'success' && data.count) {
+        if (data && data.count !== undefined) {
             countEl.innerText = Number(data.count).toLocaleString();
         } else {
             countEl.innerText = "Online";
         }
     } catch (err) {
-        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+        console.warn('⚠️ Visitor counter error:', err);
         countEl.innerText = "Online";
     }
 }
 
-// ฟังก์ชันดึงรายชื่อกลุ่มจาก Google Sheet มาหยอดลง Dropdown
+
+// ==========================================
+// 2. ฟังก์ชัน ดึงรายชื่อกลุ่มงานลง Dropdown
+// ==========================================
 async function fetchGroupNames() {
     const Group = {
         groupname: "https://script.google.com/macros/s/AKfycbxGTd0cBP5L1q-bslUD3KuTVfQYIsdO2lzAmv5UxM4-20rJaGKZEnHoz2gukUH0K2F7/exec"
@@ -5741,7 +5743,6 @@ async function fetchGroupNames() {
     if (!groupSelect) return false;
 
     try {
-        // 🚨 ปรับปรุงขา Fetch: บังคับเปิด redirect: "follow" เพื่อป้องกัน CORS Error จากเซิร์ฟเวอร์ Google
         const response = await fetch(`${Group.groupname}?action=getGroups`, {
             method: "GET",
             redirect: "follow"
@@ -5750,10 +5751,8 @@ async function fetchGroupNames() {
         const result = await response.json();
 
         if (result.status === "success" && Array.isArray(result.groups)) {
-            // ล้างข้อความโหลดดิ้งเดิมออก
             groupSelect.innerHTML = '<option value="" disabled selected>-- เลือกกลุ่มงานของคุณ --</option>';
             
-            // นำรายชื่อกลุ่มจาก Sheet มาสร้างเป็นตัวเลือก <option>
             result.groups.forEach(group => {
                 if (!group) return;
                 const opt = document.createElement('option');
@@ -5763,7 +5762,7 @@ async function fetchGroupNames() {
             });
             
             console.log("✨ โหลดรายชื่อกลุ่มงานลง Dropdown เรียบร้อย!");
-            return true; // คืนสถานะเพื่อบอกระบบหลักว่า Dropdown พร้อมทำงานแล้ว
+            return true;
         } else {
             groupSelect.innerHTML = '<option value="" disabled selected>ไม่พบข้อมูลกลุ่มงาน</option>';
             return false;
@@ -5775,8 +5774,10 @@ async function fetchGroupNames() {
     }
 }
 
-// 📌 ควบคุมลำดับการเปิดระบบ
-// ✅ วิธีการเปิด Lifecycle ระบบที่ปลอดภัย (ในส่วนที่ 12 ของคุณ)
+
+// ==========================================
+// 3. ควบคุม Lifecycle การโหลดข้อมูลหน้าเว็บ
+// ==========================================
 window.addEventListener("load", async () => {
     console.log("🚀 ระบบกำลังเริ่มโหลดข้อมูลทั้งหมด...");
 
@@ -5784,10 +5785,8 @@ window.addEventListener("load", async () => {
     if (typeof fetchIupacData === 'function') await fetchIupacData();
     if (typeof fetchAllData === 'function') await fetchAllData();
     
-    // 🔥 สั่งคำสั่งให้เบราว์เซอร์ดึงชื่อกลุ่มงาน และบังคับให้ "รอจนแผง Dropdown สร้างเสร็จ"
     await fetchGroupNames();
 
-    // จากนั้นค่อยให้ระบบ Recovery ทำการหยอดค่าประวัติลงช่องเป็นสเต็ปสุดท้าย
     if (typeof loadRecoveryData === 'function') {
         loadRecoveryData();
     }
@@ -5796,6 +5795,9 @@ window.addEventListener("load", async () => {
 });
 
 
+// ==========================================
+// 4. ระบบจัดการ Popup Report a Problem
+// ==========================================
 const CONFIG = {
     scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
 };
@@ -5831,7 +5833,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function openReportModal() {
         if (pageInput) {
-            pageInput.value = document.body.dataset.page || window.location.pathname || "Unknown page";
+            pageInput.value = document.body.dataset.page || window.location.pathname.split('/').pop() || "index.html";
         }
 
         overlay.hidden = false;
@@ -5911,10 +5913,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify(payload)
             });
 
-            const text = await response.text();
-
             if (!response.ok) {
-                throw new Error(text || "Submit failed");
+                throw new Error("Submit failed");
             }
 
             showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
