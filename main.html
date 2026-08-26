@@ -896,7 +896,9 @@
    JavaScript ทั้งหมด
 ========================================= -->
 <script>
-// 1. ฟังก์ชัน นับยอด Visitor
+// ==========================================
+// 1. Visitor Counter
+// ==========================================
 async function initVisitorCounter() {
     const countEl = document.getElementById('visitor-count');
     if (!countEl) return;
@@ -906,7 +908,10 @@ async function initVisitorCounter() {
 
     try {
         const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
-        const data = await res.json(); // อ่าน JSON ตรงๆ ไม่ต้องเช็ค Header ให้ซับซ้อน
+        
+        if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
+
+        const data = await res.json();
         
         if (data && data.count !== undefined) {
             countEl.innerText = Number(data.count).toLocaleString();
@@ -919,118 +924,348 @@ async function initVisitorCounter() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', initVisitorCounter);
+// ==========================================
+// 2. Fetch Group Names Dropdown
+// ==========================================
+async function fetchGroupNames() {
+    const groupSelect = document.getElementById('group-name-input');
+    if (!groupSelect) return false;
 
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxGTd0cBP5L1q-bslUD3KuTVfQYIsdO2lzAmv5UxM4-20rJaGKZEnHoz2gukUH0K2F7/exec";
 
-// 2. ฟังก์ชัน จัดการ Popup Report a Problem
-const CONFIG = {
+    try {
+        const res = await fetch(`${scriptURL}?action=getGroups`, { redirect: "follow" });
+        if (!res.ok) throw new Error(`HTTP Status: ${res.status}`);
+        
+        const result = await res.json();
+
+        if (result.status === "success" && Array.isArray(result.groups)) {
+            groupSelect.innerHTML = '<option value="" disabled selected>-- เลือกกลุ่มงานของคุณ --</option>';
+            result.groups.forEach(group => {
+                if (group && String(group).trim() !== "") {
+                    const opt = document.createElement('option');
+                    opt.value = group;
+                    opt.textContent = group;
+                    groupSelect.appendChild(opt);
+                }
+            });
+            return true;
+        }
+    } catch (err) {
+        console.error("❌ โหลดชื่อกลุ่มล้มเหลว:", err);
+    }
+    
+    groupSelect.innerHTML = '<option value="" disabled selected>ไม่พบข้อมูลกลุ่มงาน</option>';
+    return false;
+}
+
+// ==========================================
+// 3. Lifecycle Initialization
+// ==========================================
+window.addEventListener("load", async () => {
+    initVisitorCounter();
+
+    // เรียกฟังก์ชันภายนอกแบบ Safe Execution
+    if (typeof fetchIupacData === 'function') await fetchIupacData();
+    if (typeof fetchAllData === 'function') await fetchAllData();
+
+    await fetchGroupNames();
+
+    if (typeof loadRecoveryData === 'function') loadRecoveryData();
+});
+
+// ==========================================
+// 4. Report Problem Popup System
+// ==========================================
+const REPORT_CONFIG = {
     scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
 };
 
-const overlay = document.getElementById("reportOverlay");
-const form = document.getElementById("reportForm");
-const submitBtn = document.getElementById("submitBtn");
-const statusBox = document.getElementById("statusBox");
-const closeBtn = document.getElementById("closeReportModal");
-const cancelBtn = document.getElementById("cancelBtn");
-const reportProblemLink = document.getElementById("reportProblemLink");
-const pageInput = document.getElementById("report-page");
+document.addEventListener("DOMContentLoaded", () => {
+    const overlay = document.getElementById("reportOverlay");
+    const form = document.getElementById("reportForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusBox = document.getElementById("statusBox");
 
-function openReportModal() {
-    if (!overlay) return;
-    if (pageInput) {
-        pageInput.value = window.location.pathname.split('/').pop() || window.location.href;
+    if (!overlay || !form) return;
+
+    // ย้าย overlay ไปไว้ใต้ <body> เพื่อป้องกันปัญหา z-index หรือ CSS hierarchy
+    if (overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
     }
-    overlay.hidden = false;
-}
 
-function closeReportModal() {
-    if (!overlay) return;
-    overlay.hidden = true;
-    if (form) form.reset();
-    clearStatus();
-}
-
-function showStatus(message, type) {
-    if (!statusBox) return;
-    statusBox.className = `report-status show ${type}`;
-    statusBox.textContent = message;
-}
-
-function clearStatus() {
-    if (!statusBox) return;
-    statusBox.className = "report-status";
-    statusBox.textContent = "";
-}
-
-function validateEmail(email) {
-    return /^\S+@\S+\.\S+$/.test(email);
-}
-
-// ผูก Event แบบปลอดภัย (ป้องกัน Error หน้าที่ไม่มี Element เหล่านี้)
-reportProblemLink?.addEventListener("click", (e) => {
-    e.preventDefault();
-    openReportModal();
-});
-
-closeBtn?.addEventListener("click", closeReportModal);
-cancelBtn?.addEventListener("click", closeReportModal);
-
-overlay?.addEventListener("click", (e) => {
-    if (e.target === overlay) closeReportModal();
-});
-
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay && !overlay.hidden) {
-        closeReportModal();
-    }
-});
-
-// จัดการตอนกด Submit
-form?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearStatus();
-
-    const data = {
-        name: form.name.value.trim(),
-        email: form.email.value.trim(),
-        page: form.page.value.trim(),
-        description: form.description.value.trim(),
-        timestamp: new Date().toISOString()
+    const showStatus = (msg, type = "error") => {
+        if (!statusBox) return;
+        statusBox.textContent = msg;
+        statusBox.className = `report-status show ${type}`;
     };
 
-    if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
-    if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
-    if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
-    if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
-    if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+    const clearStatus = () => {
+        if (!statusBox) return;
+        statusBox.textContent = "";
+        statusBox.className = "report-status";
+    };
 
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Submitting...";
-    }
+    const closeModal = () => {
+        overlay.hidden = true;
+        document.body.style.overflow = "";
+        form.reset();
+        clearStatus();
+    };
+
+    // Open Modal Listener
+    document.getElementById("reportProblemLink")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        const pageInput = document.getElementById("report-page");
+        if (pageInput) {
+            pageInput.value = document.body.dataset.page || window.location.pathname.split('/').pop() || "index.html";
+        }
+        overlay.hidden = false;
+        document.body.style.overflow = "hidden";
+        setTimeout(() => document.getElementById("report-name")?.focus(), 50);
+    });
+
+    // Close Listeners
+    document.getElementById("closeReportModal")?.addEventListener("click", closeModal);
+    document.getElementById("cancelBtn")?.addEventListener("click", closeModal);
+
+    overlay.addEventListener("click", (e) => { 
+        if (e.target === overlay) closeModal(); 
+    });
+    
+    document.addEventListener("keydown", (e) => { 
+        if (e.key === "Escape" && !overlay.hidden) closeModal(); 
+    });
+
+    // Submit Form
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearStatus();
+
+        const name = document.getElementById("report-name")?.value.trim();
+        const email = document.getElementById("report-email")?.value.trim();
+        const page = document.getElementById("report-page")?.value.trim();
+        const description = document.getElementById("report-description")?.value.trim();
+
+        if (!name || !email || !page || !description) {
+            return showStatus("กรุณากรอกข้อมูลให้ครบถ้วน");
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return showStatus("รูปแบบอีเมลไม่ถูกต้อง");
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "กำลังส่งข้อมูล...";
+        }
+
+        try {
+            // ใช้ no-cors สำหรับ Google Apps Script POST Request ป้องกัน CORS Issue
+            await fetch(REPORT_CONFIG.scriptUrl, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, page, description })
+            });
+
+            showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+            setTimeout(closeModal, 1200);
+        } catch (err) {
+            console.error("Report submission error:", err);
+            showStatus("ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Submit";
+            }
+        }
+    });
+});
+</script><script>
+// ==========================================
+// 1. Visitor Counter
+// ==========================================
+async function initVisitorCounter() {
+    const countEl = document.getElementById('visitor-count');
+    if (!countEl) return;
+
+    const pageName = window.location.pathname.split('/').pop() || 'index.html';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyir5H1_bM6hfIU6iuPk0huah_MCye_FBfQ_0YxvzXgoo-RLcfWl2g2Aw2HuESv4T2aJw/exec';
 
     try {
-        await fetch(CONFIG.scriptUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(data)
-        });
+        const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
+        
+        if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
 
-        showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
-        setTimeout(() => {
-            closeReportModal();
-        }, 1200);
-
-    } catch (error) {
-        showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Submit";
+        const data = await res.json();
+        
+        if (data && data.count !== undefined) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
+            countEl.innerText = "Online";
         }
+    } catch (err) {
+        console.warn('⚠️ Visitor counter error:', err);
+        countEl.innerText = "Online";
     }
+}
+
+// ==========================================
+// 2. Fetch Group Names Dropdown
+// ==========================================
+async function fetchGroupNames() {
+    const groupSelect = document.getElementById('group-name-input');
+    if (!groupSelect) return false;
+
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxGTd0cBP5L1q-bslUD3KuTVfQYIsdO2lzAmv5UxM4-20rJaGKZEnHoz2gukUH0K2F7/exec";
+
+    try {
+        const res = await fetch(`${scriptURL}?action=getGroups`, { redirect: "follow" });
+        if (!res.ok) throw new Error(`HTTP Status: ${res.status}`);
+        
+        const result = await res.json();
+
+        if (result.status === "success" && Array.isArray(result.groups)) {
+            groupSelect.innerHTML = '<option value="" disabled selected>-- เลือกกลุ่มงานของคุณ --</option>';
+            result.groups.forEach(group => {
+                if (group && String(group).trim() !== "") {
+                    const opt = document.createElement('option');
+                    opt.value = group;
+                    opt.textContent = group;
+                    groupSelect.appendChild(opt);
+                }
+            });
+            return true;
+        }
+    } catch (err) {
+        console.error("❌ โหลดชื่อกลุ่มล้มเหลว:", err);
+    }
+    
+    groupSelect.innerHTML = '<option value="" disabled selected>ไม่พบข้อมูลกลุ่มงาน</option>';
+    return false;
+}
+
+// ==========================================
+// 3. Lifecycle Initialization
+// ==========================================
+window.addEventListener("load", async () => {
+    initVisitorCounter();
+
+    // เรียกฟังก์ชันภายนอกแบบ Safe Execution
+    if (typeof fetchIupacData === 'function') await fetchIupacData();
+    if (typeof fetchAllData === 'function') await fetchAllData();
+
+    await fetchGroupNames();
+
+    if (typeof loadRecoveryData === 'function') loadRecoveryData();
+});
+
+// ==========================================
+// 4. Report Problem Popup System
+// ==========================================
+const REPORT_CONFIG = {
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    const overlay = document.getElementById("reportOverlay");
+    const form = document.getElementById("reportForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusBox = document.getElementById("statusBox");
+
+    if (!overlay || !form) return;
+
+    // ย้าย overlay ไปไว้ใต้ <body> เพื่อป้องกันปัญหา z-index หรือ CSS hierarchy
+    if (overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
+    }
+
+    const showStatus = (msg, type = "error") => {
+        if (!statusBox) return;
+        statusBox.textContent = msg;
+        statusBox.className = `report-status show ${type}`;
+    };
+
+    const clearStatus = () => {
+        if (!statusBox) return;
+        statusBox.textContent = "";
+        statusBox.className = "report-status";
+    };
+
+    const closeModal = () => {
+        overlay.hidden = true;
+        document.body.style.overflow = "";
+        form.reset();
+        clearStatus();
+    };
+
+    // Open Modal Listener
+    document.getElementById("reportProblemLink")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        const pageInput = document.getElementById("report-page");
+        if (pageInput) {
+            pageInput.value = document.body.dataset.page || window.location.pathname.split('/').pop() || "index.html";
+        }
+        overlay.hidden = false;
+        document.body.style.overflow = "hidden";
+        setTimeout(() => document.getElementById("report-name")?.focus(), 50);
+    });
+
+    // Close Listeners
+    document.getElementById("closeReportModal")?.addEventListener("click", closeModal);
+    document.getElementById("cancelBtn")?.addEventListener("click", closeModal);
+
+    overlay.addEventListener("click", (e) => { 
+        if (e.target === overlay) closeModal(); 
+    });
+    
+    document.addEventListener("keydown", (e) => { 
+        if (e.key === "Escape" && !overlay.hidden) closeModal(); 
+    });
+
+    // Submit Form
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearStatus();
+
+        const name = document.getElementById("report-name")?.value.trim();
+        const email = document.getElementById("report-email")?.value.trim();
+        const page = document.getElementById("report-page")?.value.trim();
+        const description = document.getElementById("report-description")?.value.trim();
+
+        if (!name || !email || !page || !description) {
+            return showStatus("กรุณากรอกข้อมูลให้ครบถ้วน");
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return showStatus("รูปแบบอีเมลไม่ถูกต้อง");
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "กำลังส่งข้อมูล...";
+        }
+
+        try {
+            // ใช้ no-cors สำหรับ Google Apps Script POST Request ป้องกัน CORS Issue
+            await fetch(REPORT_CONFIG.scriptUrl, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, page, description })
+            });
+
+            showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+            setTimeout(closeModal, 1200);
+        } catch (err) {
+            console.error("Report submission error:", err);
+            showStatus("ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Submit";
+            }
+        }
+    });
 });
 </script>
 </body>
