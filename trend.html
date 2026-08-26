@@ -1744,32 +1744,36 @@ function updateGroupChart(filteredItems) {
 const VISITOR_COUNTER_ID = 'ainswertainty-target-v1'; 
 
 async function initVisitorCounter() {
-  const countEl = document.getElementById('visitor-count');
-  if (!countEl) return;
+    const countEl = document.getElementById('visitor-count');
+    if (!countEl) return;
+    
+    let pageName = window.location.pathname.split('/').pop();
+    if (!pageName || pageName === '') pageName = 'index.html';
 
-  try {
-    // ใช้คำสั่งสากลคุมแคช และชี้ลิงก์ตรงไปยังชื่อ ID ที่คุณสามารถสั่งเปลี่ยนเพื่อ Reset ได้อิสระ
-    const cacheBuster = Date.now();
-    const url = `https://api.counterapi.dev/v1/ainswertainty/${VISITOR_COUNTER_ID}/up?cb=${cacheBuster}`;
-    
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("CounterAPI response error");
-    
-    const data = await res.json();
-    
-    // ดักจับโครงสร้าง JSON ที่ CounterAPI ส่งกลับมาอย่างครอบคลุม
-    const finalCount = data.count ?? data.data ?? null;
-    
-    if (finalCount !== null) {
-      countEl.textContent = Number(finalCount).toLocaleString();
-    } else {
-      countEl.textContent = 'Online';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyYiwxK4d7szwBrcPMV28YLMdTXBDctmJEuwxenXsqu3zYQsNVnJ1QemzuwApRF6imP8A/exec';
+    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
+
+    try {
+        // เพิ่ม redirect: 'follow' เพื่อให้ติดตามการ Redirect ของ Google
+        const res = await fetch(targetURL, { redirect: 'follow' });
+        
+        // เช็ค Content-Type ก่อน parse เพื่อป้องกัน SyntaxError
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`ได้รับข้อมูลที่ไม่ใช่ JSON (Status: ${res.status})`);
+        }
+
+        const data = await res.json();
+        
+        if (data.status === 'success' && data.count !== undefined) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
+            countEl.innerText = "Online";
+        }
+    } catch (err) {
+        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+        countEl.innerText = "Online";
     }
-  } catch (err) {
-    // ป้องกันหน้าจอขึ้น Error หากเซิร์ฟเวอร์ CounterAPI ปลายทางมีสภาวะหน่วงชั่วคราว
-    countEl.textContent = 'Online';
-    console.error('Counter load failed:', err);
-  }
 }
 
 /* Report a Problem */
