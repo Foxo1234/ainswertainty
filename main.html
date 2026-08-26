@@ -896,7 +896,7 @@
    JavaScript ทั้งหมด
 ========================================= -->
 <script>
-// 1. ฟังก์ชัน นับยอด Visitor (ของคุณ)
+// 1. ฟังก์ชัน นับยอด Visitor
 async function initVisitorCounter() {
     const countEl = document.getElementById('visitor-count');
     if (!countEl) return;
@@ -908,16 +908,13 @@ async function initVisitorCounter() {
     const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
 
     try {
-        // เพิ่ม redirect: 'follow' เพื่อให้ติดตามการ Redirect ของ Google
         const res = await fetch(targetURL, { redirect: 'follow' });
         
-        // เช็ค Content-Type ก่อน parse เพื่อป้องกัน SyntaxError
-        const contentType = res.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error(`ได้รับข้อมูลที่ไม่ใช่ JSON (Status: ${res.status})`);
-        }
+        if (!res.ok) throw new Error(`HTTP Status: ${res.status}`);
 
-        const data = await res.json();
+        // ดึงข้อมูลเป็น text ก่อนเพื่อความปลอดภัย ป้องกันปัญหา Content-Type Header หาย
+        const textData = await res.text();
+        const data = JSON.parse(textData);
         
         if (data.status === 'success' && data.count !== undefined) {
             countEl.innerText = Number(data.count).toLocaleString();
@@ -925,7 +922,7 @@ async function initVisitorCounter() {
             countEl.innerText = "Online";
         }
     } catch (err) {
-        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err.message);
         countEl.innerText = "Online";
     }
 }
@@ -935,7 +932,7 @@ document.addEventListener('DOMContentLoaded', initVisitorCounter);
 
 // 2. ฟังก์ชัน จัดการ Popup Report a Problem
 const CONFIG = {
-  scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
 };
 
 const overlay = document.getElementById("reportOverlay");
@@ -948,99 +945,101 @@ const reportProblemLink = document.getElementById("reportProblemLink");
 const pageInput = document.getElementById("report-page");
 
 function openReportModal() {
-  // ดึงที่อยู่หน้าที่ใช้อยู่มาใส่ให้อัตโนมัติ
-  pageInput.value = window.location.pathname || window.location.href;
-  overlay.hidden = false;
+    if (!overlay) return;
+    if (pageInput) {
+        pageInput.value = window.location.pathname.split('/').pop() || window.location.href;
+    }
+    overlay.hidden = false;
 }
 
 function closeReportModal() {
-  overlay.hidden = true;
-  form.reset();
-  clearStatus();
+    if (!overlay) return;
+    overlay.hidden = true;
+    if (form) form.reset();
+    clearStatus();
 }
 
 function showStatus(message, type) {
-  statusBox.className = `report-status show ${type}`;
-  statusBox.textContent = message;
+    if (!statusBox) return;
+    statusBox.className = `report-status show ${type}`;
+    statusBox.textContent = message;
 }
 
 function clearStatus() {
-  statusBox.className = "report-status";
-  statusBox.textContent = "";
+    if (!statusBox) return;
+    statusBox.className = "report-status";
+    statusBox.textContent = "";
 }
 
 function validateEmail(email) {
-  return /^\S+@\S+\.\S+$/.test(email);
+    return /^\S+@\S+\.\S+$/.test(email);
 }
 
-// ผูกการคลิกเมนู Report a problem ให้เปิด Popup
-reportProblemLink.addEventListener("click", (e) => {
-  e.preventDefault(); // ไม่ให้มันวิ่งไปหน้าอื่น
-  openReportModal();
+// ผูก Event แบบปลอดภัย (ป้องกัน Error หน้าที่ไม่มี Element เหล่านี้)
+reportProblemLink?.addEventListener("click", (e) => {
+    e.preventDefault();
+    openReportModal();
 });
 
-closeBtn.addEventListener("click", closeReportModal);
-cancelBtn.addEventListener("click", closeReportModal);
+closeBtn?.addEventListener("click", closeReportModal);
+cancelBtn?.addEventListener("click", closeReportModal);
 
-// กดพื้นที่ว่างข้างนอก (overlay) เพื่อปิด Popup
-overlay.addEventListener("click", (e) => {
-  if (e.target === overlay) {
-    closeReportModal();
-  }
+overlay?.addEventListener("click", (e) => {
+    if (e.target === overlay) closeReportModal();
 });
 
-// กดปุ่ม ESC เพื่อปิด Popup
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !overlay.hidden) {
-    closeReportModal();
-  }
+    if (e.key === "Escape" && overlay && !overlay.hidden) {
+        closeReportModal();
+    }
 });
 
-// จัดการตอนกดปุ่ม Submit Form
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  clearStatus();
+// จัดการตอนกด Submit
+form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearStatus();
 
-  const data = {
-    name: form.name.value.trim(),
-    email: form.email.value.trim(),
-    page: form.page.value.trim(),
-    description: form.description.value.trim(),
-    timestamp: new Date().toISOString()
-  };
+    const data = {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        page: form.page.value.trim(),
+        description: form.description.value.trim(),
+        timestamp: new Date().toISOString()
+    };
 
-  if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
-  if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
-  if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
-  if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
-  if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+    if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
+    if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
+    if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
+    if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
+    if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
 
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Submitting...";
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+    }
 
     try {
-    // ส่งข้อมูลแบบ no-cors
-    await fetch(CONFIG.scriptUrl, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify(data)
-    });
+        await fetch(CONFIG.scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(data)
+        });
 
-    // เนื่องจากโหมด no-cors จะอ่าน response.json() ไม่ได้ 
-    // เมื่อโค้ดทำงานมาถึงบรรทัดนี้ได้ (ไม่ติด catch) แสดงว่าส่งสำเร็จแล้ว
-    showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
-    setTimeout(() => {
-      closeReportModal();
-    }, 1200);
+        showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+        setTimeout(() => {
+            closeReportModal();
+        }, 1200);
 
-  } catch (error) {
-    // จะเด้งมาตรงนี้ก็ต่อเมื่อ เน็ตหลุด หรือ URL ผิดแบบรุนแรง เท่านั้น
-    showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Submit";
-  }
+    } catch (error) {
+        showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit";
+        }
+    }
 });
-</script> 
+</script>
 </body>
 </html>
