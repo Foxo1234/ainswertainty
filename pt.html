@@ -3316,31 +3316,29 @@ window.savePDF = function() {
         }
     }, 300);
 };
-// ฟังก์ชันดึงรายชื่อกลุ่มจาก Google Sheet มาหยอดลง Dropdown
+// ==========================================
+// 1. Fetch Group Names Dropdown
+// ==========================================
 async function fetchGroupNames() {
-    const Group = {
-        groupname: "https://script.google.com/macros/s/AKfycbxGTd0cBP5L1q-bslUD3KuTVfQYIsdO2lzAmv5UxM4-20rJaGKZEnHoz2gukUH0K2F7/exec"
-    };
-    
+    const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxGTd0cBP5L1q-bslUD3KuTVfQYIsdO2lzAmv5UxM4-20rJaGKZEnHoz2gukUH0K2F7/exec";
     const groupSelect = document.getElementById('group-name-input');
+    
     if (!groupSelect) return false;
 
     try {
-        // 🚨 ปรับปรุงขา Fetch: บังคับเปิด redirect: "follow" เพื่อป้องกัน CORS Error จากเซิร์ฟเวอร์ Google
-        const response = await fetch(`${Group.groupname}?action=getGroups`, {
+        const response = await fetch(`${API_ENDPOINT}?action=getGroups`, {
             method: "GET",
             redirect: "follow"
         });
         
+        if (!response.ok) throw new Error(`HTTP Error Status: ${response.status}`);
         const result = await response.json();
 
         if (result.status === "success" && Array.isArray(result.groups)) {
-            // ล้างข้อความโหลดดิ้งเดิมออก
             groupSelect.innerHTML = '<option value="" disabled selected>-- เลือกกลุ่มงานของคุณ --</option>';
             
-            // นำรายชื่อกลุ่มจาก Sheet มาสร้างเป็นตัวเลือก <option>
             result.groups.forEach(group => {
-                if (!group) return;
+                if (!group || String(group).trim() === "") return;
                 const opt = document.createElement('option');
                 opt.value = group;
                 opt.textContent = group;
@@ -3348,7 +3346,7 @@ async function fetchGroupNames() {
             });
             
             console.log("✨ โหลดรายชื่อกลุ่มงานลง Dropdown เรียบร้อย!");
-            return true; // คืนสถานะเพื่อบอกระบบหลักว่า Dropdown พร้อมทำงานแล้ว
+            return true;
         } else {
             groupSelect.innerHTML = '<option value="" disabled selected>ไม่พบข้อมูลกลุ่มงาน</option>';
             return false;
@@ -3359,9 +3357,37 @@ async function fetchGroupNames() {
         return false;
     }
 }
-/* ==========================================================================
-   1. LIFECYCLE CONTROLLER (เวอร์ชันแก้ไขปัญหา Race Condition)
-   ========================================================================== */
+
+// ==========================================
+// 2. Visitor Counter
+// ==========================================
+async function initVisitorCounter() {
+    const countEl = document.getElementById('visitor-count');
+    if (!countEl) return;
+
+    const pageName = window.location.pathname.split('/').pop() || 'index.html';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyir5H1_bM6hfIU6iuPk0huah_MCye_FBfQ_0YxvzXgoo-RLcfWl2g2Aw2HuESv4T2aJw/exec';
+
+    try {
+        const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
+        if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
+
+        const data = await res.json();
+        
+        if (data && data.count !== undefined) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
+            countEl.innerText = "Online";
+        }
+    } catch (err) {
+        console.warn('⚠️ Visitor counter error:', err);
+        countEl.innerText = "Online";
+    }
+}
+
+// ==========================================
+// 3. Lifecycle Controller (Async Sequence)
+// ==========================================
 window.addEventListener("load", async () => {
     console.log("🚀 ระบบกำลังเริ่มโหลดข้อมูลทั้งหมด...");
 
@@ -3370,12 +3396,12 @@ window.addEventListener("load", async () => {
     if (typeof fetchIupacData === 'function') await fetchIupacData();
     if (typeof fetchAllData === 'function') await fetchAllData();
     
-    // 2. 🔥 บังคับดึงรายชื่อกลุ่มงานจาก Google Sheets และ "รอ (await)" จนแผง <option> สร้างเสร็จใน DOM นิ่งสนิท
+    // 2. บังคับดึงรายชื่อกลุ่มงานและรอจนกว่า <option> จะเพิ่มเสร็จ
     if (typeof fetchGroupNames === 'function') {
         await fetchGroupNames();
     }
 
-    // 3. หลังจากตัวเลือกกลุ่มงานฝังลงใน UI ครบแล้ว จึงปล่อยให้ระบบทำการกู้คืนประวัติมาหยอดค่าลงช่อง
+    // 3. หลังจาก Dropdown พร้อม จึงกู้คืนประวัติและเติมค่าลงช่อง
     if (typeof loadRecoveryData === 'function') {
         await loadRecoveryData(); 
     }
@@ -3383,100 +3409,98 @@ window.addEventListener("load", async () => {
     console.log("✨ โหลดข้อมูลกลุ่มงานและกู้คืนสถานะตามลำดับสำเร็จ พร้อมใช้งาน 100%!");
 });
 
+// ==========================================
+// 4. Report Problem Popup Handler
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    const CONFIG = {
+        scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+    };
 
-// 2. ฟังก์ชัน จัดการ Popup Report a Problem
-const CONFIG = {
-    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
-};
+    const overlay = document.getElementById("reportOverlay");
+    const form = document.getElementById("reportForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusBox = document.getElementById("statusBox");
+    const closeBtn = document.getElementById("closeReportModal");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const reportProblemLink = document.getElementById("reportProblemLink");
+    const pageInput = document.getElementById("report-page");
 
-const overlay = document.getElementById("reportOverlay");
-const form = document.getElementById("reportForm");
-const submitBtn = document.getElementById("submitBtn");
-const statusBox = document.getElementById("statusBox");
-const closeBtn = document.getElementById("closeReportModal");
-const cancelBtn = document.getElementById("cancelBtn");
-const reportProblemLink = document.getElementById("reportProblemLink");
-const pageInput = document.getElementById("report-page");
+    function openReportModal() {
+        if (!overlay || !pageInput) return;
+        pageInput.value = window.location.pathname || window.location.href;
+        overlay.hidden = false;
 
-function openReportModal() {
-    if (!overlay || !pageInput) return;
-    pageInput.value = window.location.pathname || window.location.href;
-    overlay.hidden = false;
+        setTimeout(() => {
+            document.getElementById("report-name")?.focus();
+        }, 30);
+    }
 
-    setTimeout(() => {
-        document.getElementById("report-name")?.focus();
-    }, 30);
-}
+    function closeReportModal() {
+        if (!overlay || !form) return;
+        overlay.hidden = true;
+        form.reset();
+        clearStatus();
+    }
 
-function closeReportModal() {
-    if (!overlay || !form || !statusBox) return;
-    overlay.hidden = true;
-    form.reset();
-    clearStatus();
-}
+    function showStatus(message, type) {
+        if (!statusBox) return;
+        statusBox.className = `report-status show ${type}`;
+        statusBox.textContent = message;
+    }
 
-function showStatus(message, type) {
-    if (!statusBox) return;
-    statusBox.className = `report-status show ${type}`;
-    statusBox.textContent = message;
-}
+    function clearStatus() {
+        if (!statusBox) return;
+        statusBox.className = "report-status";
+        statusBox.textContent = "";
+    }
 
-function clearStatus() {
-    if (!statusBox) return;
-    statusBox.className = "report-status";
-    statusBox.textContent = "";
-}
+    function validateEmail(email) {
+        return /^\S+@\S+\.\S+$/.test(email);
+    }
 
-function validateEmail(email) {
-    return /^\S+@\S+\.\S+$/.test(email);
-}
-
-// ผูกการคลิกเมนู Report a problem ให้เปิด Popup
-if (reportProblemLink) {
-    reportProblemLink.addEventListener("click", (e) => {
+    // Event Listeners
+    reportProblemLink?.addEventListener("click", (e) => {
         e.preventDefault();
         openReportModal();
     });
-}
 
-if (closeBtn) closeBtn.addEventListener("click", closeReportModal);
-if (cancelBtn) cancelBtn.addEventListener("click", closeReportModal);
+    closeBtn?.addEventListener("click", closeReportModal);
+    cancelBtn?.addEventListener("click", closeReportModal);
 
-// กดพื้นที่ว่างข้างนอก (overlay) เพื่อปิด Popup
-if (overlay) {
-    overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) {
+    overlay?.addEventListener("click", (e) => {
+        if (e.target === overlay) closeReportModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay && !overlay.hidden) {
             closeReportModal();
         }
     });
-}
 
-// กดปุ่ม ESC เพื่อปิด Popup
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay && !overlay.hidden) {
-        closeReportModal();
-    }
-});
-
-// จัดการตอนกดปุ่ม Submit Form
-if (form) {
-    form.addEventListener("submit", async (e) => {
+    // Submit Handler
+    form?.addEventListener("submit", async (e) => {
         e.preventDefault();
         clearStatus();
 
-        const data = {
-            name: form.name.value.trim(),
-            email: form.email.value.trim(),
-            page: form.page.value.trim(),
-            description: form.description.value.trim(),
+        const nameVal = document.getElementById("report-name")?.value.trim() || form.name?.value?.trim() || "";
+        const emailVal = document.getElementById("report-email")?.value.trim() || form.email?.value?.trim() || "";
+        const pageVal = document.getElementById("report-page")?.value.trim() || form.page?.value?.trim() || "";
+        const descVal = document.getElementById("report-description")?.value.trim() || form.description?.value?.trim() || "";
+
+        const payload = {
+            name: nameVal,
+            email: emailVal,
+            page: pageVal,
+            description: descVal,
             timestamp: new Date().toISOString()
         };
 
-        if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
-        if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
-        if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
-        if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
-        if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+        if (!payload.name) return showStatus("กรุณากรอกชื่อ", "error");
+        if (!payload.email) return showStatus("กรุณากรอกอีเมล", "error");
+        if (!validateEmail(payload.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
+        if (!payload.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
+        if (!payload.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
 
         if (submitBtn) {
             submitBtn.disabled = true;
@@ -3487,7 +3511,7 @@ if (form) {
             await fetch(CONFIG.scriptUrl, {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             });
 
             showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
@@ -3496,6 +3520,7 @@ if (form) {
             }, 1200);
 
         } catch (error) {
+            console.error("Report submit error:", error);
             showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
         } finally {
             if (submitBtn) {
@@ -3504,43 +3529,7 @@ if (form) {
             }
         }
     });
-}
-
-/**
- * ฟังก์ชันสำหรับนับและแสดงจำนวนผู้เข้าชมระบบแบบ Real-time ผ่าน CounterAPI
- */
-async function initVisitorCounter() {
-    const countEl = document.getElementById('visitor-count');
-    if (!countEl) return;
-    
-    let pageName = window.location.pathname.split('/').pop();
-    if (!pageName || pageName === '') pageName = 'index.html';
-
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyYiwxK4d7szwBrcPMV28YLMdTXBDctmJEuwxenXsqu3zYQsNVnJ1QemzuwApRF6imP8A/exec';
-    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
-
-    try {
-        // เพิ่ม redirect: 'follow' เพื่อให้ติดตามการ Redirect ของ Google
-        const res = await fetch(targetURL, { redirect: 'follow' });
-        
-        // เช็ค Content-Type ก่อน parse เพื่อป้องกัน SyntaxError
-        const contentType = res.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error(`ได้รับข้อมูลที่ไม่ใช่ JSON (Status: ${res.status})`);
-        }
-
-        const data = await res.json();
-        
-        if (data.status === 'success' && data.count !== undefined) {
-            countEl.innerText = Number(data.count).toLocaleString();
-        } else {
-            countEl.innerText = "Online";
-        }
-    } catch (err) {
-        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
-        countEl.innerText = "Online";
-    }
-}
+});
 </script>
  
 </body>
