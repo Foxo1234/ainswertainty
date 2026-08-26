@@ -5711,7 +5711,7 @@ async function initVisitorCounter() {
     if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
 
     // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzvdVtGjSlzo4XxNBR1ipPQq2Yw9OPgz9btzowDhNiCEHAYHcgOh8JAewwzTC291cqLeQ/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzpXGxPsjyZw0JzcyHBEaS7wcja44OKgzZIq9VTDgPEHnAMinTiZmECNekmOO_k2tvaTQ/exec';
     
     // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
     const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
