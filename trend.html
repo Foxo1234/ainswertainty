@@ -1739,167 +1739,182 @@ function updateGroupChart(filteredItems) {
   });
 }
 
+// ==========================================
+// 1. Visitor Counter Setup
+// ==========================================
 async function initVisitorCounter() {
-    const countEl = document.getElementById('visitor-count');
-    if (!countEl) return;
-    
-    let pageName = window.location.pathname.split('/').pop();
-    if (!pageName || pageName === '') pageName = 'index.html';
+  const countEl = document.getElementById('visitor-count');
+  if (!countEl) return;
 
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyYiwxK4d7szwBrcPMV28YLMdTXBDctmJEuwxenXsqu3zYQsNVnJ1QemzuwApRF6imP8A/exec';
-    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
+  const pageName = window.location.pathname.split('/').pop() || 'index.html';
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbyir5H1_bM6hfIU6iuPk0huah_MCye_FBfQ_0YxvzXgoo-RLcfWl2g2Aw2HuESv4T2aJw/exec';
 
-    try {
-        // เพิ่ม redirect: 'follow' เพื่อให้ติดตามการ Redirect ของ Google
-        const res = await fetch(targetURL, { redirect: 'follow' });
-        
-        // เช็ค Content-Type ก่อน parse เพื่อป้องกัน SyntaxError
-        const contentType = res.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error(`ได้รับข้อมูลที่ไม่ใช่ JSON (Status: ${res.status})`);
-        }
+  try {
+    const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
+    if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
 
-        const data = await res.json();
-        
-        if (data.status === 'success' && data.count !== undefined) {
-            countEl.innerText = Number(data.count).toLocaleString();
-        } else {
-            countEl.innerText = "Online";
-        }
-    } catch (err) {
-        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
-        countEl.innerText = "Online";
-    }
-}
-
-/* Report a Problem */
-const overlay = document.getElementById("reportOverlay");
-const form = document.getElementById("reportForm");
-const submitBtn = document.getElementById("submitBtn");
-const statusBox = document.getElementById("statusBox");
-const closeBtn = document.getElementById("closeReportModal");
-const cancelBtn = document.getElementById("cancelBtn");
-const reportProblemLink = document.getElementById("reportProblemLink");
-const pageInput = document.getElementById("report-page");
-
-function openReportModal() {
-  pageInput.value = window.location.href;
-  overlay.hidden = false;
-}
-
-function closeReportModal() {
-  overlay.hidden = true;
-  form.reset();
-  clearStatus();
-}
-
-function showStatus(message, type) {
-  statusBox.className = `report-status show ${type}`;
-  statusBox.textContent = message;
-}
-
-function clearStatus() {
-  statusBox.className = "report-status";
-  statusBox.textContent = "";
-}
-
-function validateEmail(email) {
-  return /^\S+@\S+\.\S+$/.test(email);
-}
-
-if (reportProblemLink) {
-  reportProblemLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    openReportModal();
-  });
-}
-
-if (closeBtn) closeBtn.addEventListener("click", closeReportModal);
-if (cancelBtn) cancelBtn.addEventListener("click", closeReportModal);
-
-if (overlay) {
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) {
-      closeReportModal();
-    }
-  });
-}
-
-document.getElementById("trendModal").addEventListener("click", function(e) {
-  if (e.target === this) closeModal();
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    if (overlay && !overlay.hidden) {
-      closeReportModal();
+    const data = await res.json();
+    if (data && data.count !== undefined) {
+      countEl.innerText = Number(data.count).toLocaleString();
     } else {
-      const trendModal = document.getElementById("trendModal");
-      if (trendModal.classList.contains("show")) {
+      countEl.innerText = "Online";
+    }
+  } catch (err) {
+    console.warn('⚠️ Visitor counter error:', err);
+    countEl.innerText = "Online";
+  }
+}
+
+// ==========================================
+// 2. Main System & Event Handlers
+// ==========================================
+document.addEventListener('DOMContentLoaded', async () => {
+
+  // --- 2.1 Configuration ---
+  const REPORT_CONFIG = {
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+  };
+
+  // --- 2.2 DOM Elements Selection ---
+  const overlay = document.getElementById("reportOverlay");
+  const form = document.getElementById("reportForm");
+  const submitBtn = document.getElementById("submitBtn");
+  const statusBox = document.getElementById("statusBox");
+  const closeBtn = document.getElementById("closeReportModal");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const reportProblemLink = document.getElementById("reportProblemLink");
+  const pageInput = document.getElementById("report-page");
+  const trendModal = document.getElementById("trendModal");
+
+  // --- 2.3 Helper & Modal Functions ---
+  function openReportModal() {
+    if (pageInput) pageInput.value = window.location.href;
+    if (overlay) overlay.hidden = false;
+  }
+
+  function closeReportModal() {
+    if (overlay) overlay.hidden = true;
+    if (form) form.reset();
+    clearStatus();
+  }
+
+  function showStatus(message, type) {
+    if (!statusBox) return;
+    statusBox.className = `report-status show ${type}`;
+    statusBox.textContent = message;
+  }
+
+  function clearStatus() {
+    if (!statusBox) return;
+    statusBox.className = "report-status";
+    statusBox.textContent = "";
+  }
+
+  function validateEmail(email) {
+    return /^\S+@\S+\.\S+$/.test(email);
+  }
+
+  // --- 2.4 Event Listeners (Safe Bindings) ---
+  if (reportProblemLink) {
+    reportProblemLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      openReportModal();
+    });
+  }
+
+  if (closeBtn) closeBtn.addEventListener("click", closeReportModal);
+  if (cancelBtn) cancelBtn.addEventListener("click", closeReportModal);
+
+  if (overlay) {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeReportModal();
+    });
+  }
+
+  if (trendModal) {
+    trendModal.addEventListener("click", function(e) {
+      if (e.target === this && typeof closeModal === 'function') {
         closeModal();
       }
-    }
+    });
   }
-});
 
-if (form) {
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearStatus();
-
-    const data = {
-      name: form.name.value.trim(),
-      email: form.email.value.trim(),
-      page: form.page.value.trim(),
-      description: form.description.value.trim(),
-      timestamp: new Date().toISOString()
-    };
-
-    if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
-    if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
-    if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
-    if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
-    if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
-
-    try {
-      await fetch(REPORT_CONFIG.scriptUrl, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify(data)
-      });
-
-      showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
-      setTimeout(() => {
+  // Global Keydown Handler (ESC)
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (overlay && !overlay.hidden) {
         closeReportModal();
-      }, 1200);
-    } catch (error) {
-      showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit";
+      } else if (trendModal && trendModal.classList.contains("show")) {
+        if (typeof closeModal === 'function') closeModal();
+      }
     }
   });
-}
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // 1. บังคับโหลด Config (Target & Watchlist) จาก Google Sheets เก็บเข้าแรมก่อน
-  await loadConfig();
-  
-  // 🔥 1.5 เพิ่มตรงนี้: โหลดรายชื่อกลุ่มงานจริงจากชีต GROUPS เข้ามาเตรียมไว้ในระบบ
-  await loadSystemGroups(); 
-  
-  // 2. เมื่อได้การตั้งค่าและรายชื่อกลุ่มงานครบแล้ว ค่อยดึงข้อมูลผลแล็บหลักมาคำนวณพล็อตตารางและกราฟ
-  await loadData();
-  
-  // 3. เริ่มระบบนับจำนวนผู้เข้าใช้งาน
-  await initVisitorCounter();
+  // --- 2.5 Form Submission Handler ---
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearStatus();
 
-  // ระบบ Auto Refresh ดึงข้อมูลผลแล็บใหม่ทุก ๆ 1 นาที (60000 ms)
-  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  autoRefreshTimer = setInterval(loadData, 60000);
+      const data = {
+        name: form.name?.value?.trim() || "",
+        email: form.email?.value?.trim() || "",
+        page: form.page?.value?.trim() || "",
+        description: form.description?.value?.trim() || "",
+        timestamp: new Date().toISOString()
+      };
+
+      if (!data.name) return showStatus("กรุณากรอกชื่อ", "error");
+      if (!data.email) return showStatus("กรุณากรอกอีเมล", "error");
+      if (!validateEmail(data.email)) return showStatus("รูปแบบอีเมลไม่ถูกต้อง", "error");
+      if (!data.page) return showStatus("กรุณากรอกหน้าที่พบปัญหา", "error");
+      if (!data.description) return showStatus("กรุณากรอกรายละเอียดปัญหา", "error");
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+      }
+
+      try {
+        await fetch(REPORT_CONFIG.scriptUrl, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify(data)
+        });
+
+        showStatus("ส่งข้อมูลเรียบร้อยแล้ว", "success");
+        setTimeout(() => {
+          closeReportModal();
+        }, 1200);
+      } catch (error) {
+        console.error("Submit Error:", error);
+        showStatus("ไม่สามารถเชื่อมต่อกับระบบได้", "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Submit";
+        }
+      }
+    });
+  }
+
+  // --- 2.6 System Data Initialization ---
+  try {
+    if (typeof loadConfig === 'function') await loadConfig();
+    if (typeof loadSystemGroups === 'function') await loadSystemGroups();
+    if (typeof loadData === 'function') await loadData();
+    
+    await initVisitorCounter();
+
+    // Auto Refresh
+    if (window.autoRefreshTimer) clearInterval(window.autoRefreshTimer);
+    if (typeof loadData === 'function') {
+      window.autoRefreshTimer = setInterval(loadData, 60000);
+    }
+  } catch (err) {
+    console.error("Initialization Sequence Error:", err);
+  }
+
 });
 
 </script>
