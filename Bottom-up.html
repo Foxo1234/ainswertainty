@@ -19,6 +19,8 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- ปิด Warning เรื่อง Tailwind CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     
     <style>
     :root {
@@ -1415,7 +1417,7 @@
             chemical: "https://script.google.com/macros/s/AKfycbykP1T52JbhFyH53tQkPHa8J2sCqGiTM6MXPJX01lNPpUy3BiHihtFBct8JVZU_owIm4Q/exec",
             equipment: "https://script.google.com/macros/s/AKfycbzJLQBibjpV4v4m4fUpc3l-LF8wMKwB3YKaAtOEiGU1QUPllOOzA8N3xiP1VqBlhiyd/exec",
             glassware: "https://script.google.com/macros/s/AKfycbxaDq0H2qvQXvV-VP1tYygTaWWBJayCGs8iaRc_CybS1aL8blQHJPPzzgkAInQ_OV_FRQ/exec",
-            autopipette: "https://script.google.com/macros/s/AKfycbwIRZPd8q8k3KhVaQ33rVWvmlZk8vC7sB9y6KQUMCbhVrPBmJIKqoXs5X5RWM4oazPM3g/exec"
+            autopipette: "https://script.google.com/macros/s/AKfycbxbNdOnlh5TKKFeEpep09j0jKNwhyMb7j8YlfMBO34g6iLXBX__gIdqHZd_HzEg99AUqw/exec"
         };
 
         let dbData = { chemical: [], equipment: [], glassware: [], autopipette: [] };
@@ -2156,7 +2158,7 @@ window.dbData.elements = [];
 // 3. ฟังก์ชันดึงข้อมูลแบบ Asynchronous (ไม่บล็อกหน้าเว็บ)
 async function fetchIupacData() {
     // ⚠️ ตรวจสอบตรงนี้: ต้องเป็นลิงก์จริงๆ จากขั้นตอนการ Deploy
-    const API_URL = "https://script.google.com/macros/s/AKfycbw0sabiPvKLTBFm1wg15jlRCmz4MqFM3mQkenKM9lDJynuv_OiN2ycbMempshSfn-sG/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbzutqqinhFPDEHLIi1em1R6QUGv27Y8ZIDK_mc3Iu_Pro2uST7H5Jzix2WXBxiY9xlB/exec"; 
 
     if (API_URL.includes("URL_ที่คุณเพิ่ง_DEPLOY")) {
         console.error("❌ คุณยังไม่ได้ใส่ URL แอปเว็บจริงๆ ในตัวแปร API_URL ครับ!");
@@ -5709,7 +5711,7 @@ async function initVisitorCounter() {
     if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
 
     // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyBW9QG5Vtptq_vxv4FtLm-esDNTner5HTKcxj6LnkYCCtkgrDMUdoIkLwDWNl1V7K8ZQ/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzvdVtGjSlzo4XxNBR1ipPQq2Yw9OPgz9btzowDhNiCEHAYHcgOh8JAewwzTC291cqLeQ/exec';
     
     // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
     const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
@@ -5795,7 +5797,7 @@ window.addEventListener("load", async () => {
 
 
 const CONFIG = {
-    scriptUrl: "https://script.google.com/macros/s/AKfycbxOHVfHIZbb7MUeOKGchqiWFs8S-1g5Q4I2RtTzByza0QfAjN6tpHF-3-5x-ttfirJweg/exec"
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
 };
 
 document.addEventListener("DOMContentLoaded", () => {
