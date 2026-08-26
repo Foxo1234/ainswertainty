@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Cabin+Sketch:wght@400;700&family=Sriracha&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googlFFeapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Cabin+Sketch:wght@400;700&family=Sriracha&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
     <style>
@@ -316,7 +316,7 @@
                 <div class="visitor-pill">
                     <div class="live-dot"></div>
                     <span class="live-text">Live</span>
-                    <span class="views-count">Views: <span id="visitor-count">24</span></span>
+                    <span class="views-count">Views: <span id="visitor-count">Online</span></span>
                 </div>
             </div>
         </div>
@@ -992,12 +992,33 @@ async function refreshHistoryData() {
   }
 }
 
-function initVisitorCounter() {
-  const countEl = document.getElementById("visitor-count");
-  if (!countEl) return;
-  fetch("https://api.counterapi.dev/v1/ainswertainty/history-page3/up")
-    .then(res => res.json()).then(res => { countEl.innerText = (res.count ?? 0).toLocaleString(); })
-    .catch(() => { countEl.innerText = "Online"; });
+async function initVisitorCounter() {
+    const countEl = document.getElementById('visitor-count');
+    if (!countEl) return;
+    
+    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
+    let pageName = window.location.pathname.split('/').pop();
+    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
+
+    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzpXGxPsjyZw0JzcyHBEaS7wcja44OKgzZIq9VTDgPEHnAMinTiZmECNekmOO_k2tvaTQ/exec';
+    
+    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
+    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
+
+    try {
+        const res = await fetch(targetURL);
+        const data = await res.json();
+        
+        if (data.status === 'success' && data.count) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
+            countEl.innerText = "Online";
+        }
+    } catch (err) {
+        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+        countEl.innerText = "Online";
+    }
 }
 
 // ==========================================
