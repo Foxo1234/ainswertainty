@@ -14,7 +14,7 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Cabin+Sketch:wght@400;700&family=Sriracha&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
-
+    <link rel="shortcut icon" href="#">
     <script src="https://cdn.tailwindcss.com"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -653,6 +653,7 @@
         }
     }
     </style>
+    
 </head>
 
 <body data-page="Bottomup">
@@ -703,7 +704,7 @@
             <div class="visitor-pill">
                 <div class="live-dot"></div>
                 <span class="live-text">Live</span>
-                <span class="views-count">Views: <span id="visitor-count">24</span></span>
+                <span class="views-count">Views: <span id="visitor-count">online</span></span>
             </div>
         </div>
     </aside>
@@ -5699,19 +5700,33 @@ async function loadRecoveryData() {
     }
 }
 
-function initVisitorCounter() {
+async function initVisitorCounter() {
     const countEl = document.getElementById('visitor-count');
-    if(!countEl) return;
+    if (!countEl) return;
     
-    // ดึงข้อมูลจำนวนผู้ชม
-    fetch('https://api.counterapi.dev/v1/ainswertainty/history-v5/up')
-        .then(res => res.json())
-        .then(res => {
-            countEl.innerText = res.count.toLocaleString();
-        })
-        .catch(() => {
+    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
+    let pageName = window.location.pathname.split('/').pop();
+    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
+
+    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyBW9QG5Vtptq_vxv4FtLm-esDNTner5HTKcxj6LnkYCCtkgrDMUdoIkLwDWNl1V7K8ZQ/exec';
+    
+    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
+    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
+
+    try {
+        const res = await fetch(targetURL);
+        const data = await res.json();
+        
+        if (data.status === 'success' && data.count) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
             countEl.innerText = "Online";
-        }); // <-- เติมวงเล็บปิดให้สมบูรณ์ตรงนี้
+        }
+    } catch (err) {
+        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+        countEl.innerText = "Online";
+    }
 }
 
 // ฟังก์ชันดึงรายชื่อกลุ่มจาก Google Sheet มาหยอดลง Dropdown
@@ -5780,7 +5795,7 @@ window.addEventListener("load", async () => {
 
 
 const CONFIG = {
-    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec"
+    scriptUrl: "https://script.google.com/macros/s/AKfycbxOHVfHIZbb7MUeOKGchqiWFs8S-1g5Q4I2RtTzByza0QfAjN6tpHF-3-5x-ttfirJweg/exec"
 };
 
 document.addEventListener("DOMContentLoaded", () => {
