@@ -784,7 +784,7 @@
     chemical: "https://script.google.com/macros/s/AKfycbwsGhP991w7pEcMnPI_5HFmNk3QU9fFA9_jZw0RRplUXjuS2SQD5OEFicfFmS-if42u5A/exec",
     instrument: "https://script.google.com/macros/s/AKfycbxsOLcZ1FHTu3hJWZJ0DlLgKZxQoolytBZBlA31EX4yDSPJopCzBmoA1Ihi4KoIi6yM/exec",
     glassware: "https://script.google.com/macros/s/AKfycbxaDq0H2qvQXvV-VP1tYygTaWWBJayCGs8iaRc_CybS1aL8blQHJPPzzgkAInQ_OV_FRQ/exec",
-    autopipette: "https://script.google.com/macros/s/AKfycbwDxE5pMV7taNHLM22fjc_sjPBXawIqphkGdEw6a_ndUpUPp1OoGneTqgg1B51F4fgSkg/exec"
+    autopipette: "https://script.google.com/macros/s/AKfycbx2SQkWs5X0gTdc57qa6K73Q1KjJJN_L9bpgbddP6ENO0v1gG5gIQeUfFA86t62EKQJmQ/exec"
   };
 
   const CONFIG = {
@@ -955,16 +955,31 @@
   async function initVisitorCounter() {
     const countEl = document.getElementById('visitor-count');
     if (!countEl) return;
+    
+    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
+    let pageName = window.location.pathname.split('/').pop();
+    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
+
+    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzpXGxPsjyZw0JzcyHBEaS7wcja44OKgzZIq9VTDgPEHnAMinTiZmECNekmOO_k2tvaTQ/exec';
+    
+    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
+    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
 
     try {
-      const res = await fetch('https://api.counterapi.dev/v1/ainswertainty/history-index-v1/up');
-      const data = await res.json();
-      countEl.textContent = (data.count ?? data.data ?? 0).toLocaleString();
+        const res = await fetch(targetURL);
+        const data = await res.json();
+        
+        if (data.status === 'success' && data.count) {
+            countEl.innerText = Number(data.count).toLocaleString();
+        } else {
+            countEl.innerText = "Online";
+        }
     } catch (err) {
-      countEl.textContent = 'Online';
-      console.error('Counter load failed:', err);
+        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
+        countEl.innerText = "Online";
     }
-  }
+}
 
   const overlay = document.getElementById("reportOverlay");
   const reportForm = document.getElementById("reportForm");
