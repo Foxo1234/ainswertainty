@@ -479,7 +479,7 @@ function extractItems(json) {
 function formatDate(value) {
   if (!value) return "-";
   const d = new Date(value);
-  if (isNaN(d)) return String(value);
+  if (isNaN(d.getTime())) return String(value);
   return d.toLocaleString("th-TH");
 }
 
@@ -497,6 +497,12 @@ function escapeAttr(value) {
     .replace(/&/g, "&amp;")
     .replace(/'/g, "&#39;")
     .replace(/"/g, "&quot;");
+}
+
+function formatPercent2(value) {
+  const num = parseFloat(String(value ?? "").replace('%', '').trim());
+  if (isNaN(num)) return String(value || "-");
+  return `${num.toFixed(2)}%`;
 }
 
 function resolveTargetPage(pageName, source) {
@@ -543,7 +549,7 @@ function normalizeTopDown(item) {
     resultText = `${measured} ± ${calculatedU}`;
   }
 
-  let relativeText = payload?.combinedModule?.U || payload?.dashboard?.expandedU || payload?.combinedModule?.relativeU || "-";
+  const relativeText = payload?.combinedModule?.U || payload?.dashboard?.expandedU || payload?.combinedModule?.relativeU || "-";
 
   return {
     source: "top-down",
@@ -657,9 +663,13 @@ function updateGroupDropdown() {
 // 5. DOM Rendering & Modal Actions
 // ==========================================
 function renderStats() {
-  document.getElementById("stat-total").innerText = mergedData.length;
-  document.getElementById("stat-bottomup").innerText = mergedData.filter(x => x.source === "bottom-up").length;
-  document.getElementById("stat-topdown").innerText = mergedData.filter(x => x.source === "top-down").length;
+  const totalEl = document.getElementById("stat-total");
+  const bottomEl = document.getElementById("stat-bottomup");
+  const topEl = document.getElementById("stat-topdown");
+
+  if (totalEl) totalEl.innerText = mergedData.length;
+  if (bottomEl) bottomEl.innerText = mergedData.filter(x => x.source === "bottom-up").length;
+  if (topEl) topEl.innerText = mergedData.filter(x => x.source === "top-down").length;
 }
 
 function renderTable() {
@@ -676,7 +686,7 @@ function renderTable() {
     const dateValue = new Date(item.timestamp);
     const hasValidDate = !isNaN(dateValue.getTime());
 
-    if (search && !text.includes(search)) return false;
+    if (search && !text.includes(search.trim().toLowerCase())) return false;
     if (startDate && hasValidDate && dateValue < startDate) return false;
     if (endDate && hasValidDate && dateValue > endDate) return false;
     if (selectedGroup && item.groupName !== selectedGroup) return false;
@@ -696,7 +706,7 @@ function renderTable() {
     row.className = "hover:bg-slate-50 transition-colors border-b border-gray-50";
 
     row.innerHTML = `
-      <td class="py-3.5 px-6 text-left text-sm text-slate-500 font-kanit font-semibold whitespace-nowrap">${formatDate(item.timestamp)}</td>
+      <td class="py-3.5 px-6 text-left text-sm text-slate-500 font-kanit font-semibold whitespace-nowrap">${escapeHtml(formatDate(item.timestamp))}</td>
       <td class="px-5 text-center text-sm font-bold text-slate-600 whitespace-nowrap">${escapeHtml(item.labNo)}</td>
       <td class="px-5 text-center">${item.source === "bottom-up" ? '<span class="pill bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold tracking-wide">Bottom-up</span>' : '<span class="text-sm text-slate-300">-</span>'}</td>
       <td class="px-5 text-center">${item.source === "top-down" ? '<span class="pill bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold tracking-wide">Top-down</span>' : '<span class="text-sm text-slate-300">-</span>'}</td>
@@ -722,14 +732,10 @@ function renderTable() {
   });
 }
 
-function formatPercent2(value) {
-  const num = parseFloat(String(value ?? "").replace('%', '').trim());
-  if (isNaN(num)) return String(value || "-");
-  return `${num.toFixed(2)}%`;
+function changePage(pageNumber) { 
+  currentPage = pageNumber; 
+  renderTable(); 
 }
-
-// เปลี่ยนเลขหน้า
-function changePage(pageNumber) { currentPage = pageNumber; renderTable(); }
 
 function renderPagination(totalPages) {
   const container = document.getElementById("pagination-container");
@@ -782,7 +788,10 @@ function closeModal() {
     modal.classList.remove("flex");
     modal.classList.add("hidden");
   }
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  if (chartInstance) { 
+    chartInstance.destroy(); 
+    chartInstance = null; 
+  }
 }
 
 function closeLoadModal() {
@@ -805,13 +814,16 @@ function openDetailByIndex(index) {
   selectedPayload = record.payload;
   loadBackTarget = record.userName;
 
-  document.getElementById("detail-meta").innerHTML = `
-    ${record.source === "top-down" ? '<span class="pill bg-emerald-100 text-emerald-700 border border-emerald-200">Top-down</span>' : '<span class="pill bg-blue-100 text-blue-700 border border-blue-200">Bottom-up</span>'}
-    <span class="ml-2 pill bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(record.moduleLabel)}</span>
-    <span class="ml-2 font-bold text-blue-600 font-mono">[${escapeHtml(record.labNo)}]</span>
-    <span class="ml-1 font-semibold text-slate-700">${escapeHtml(record.groupName || "ไม่ระบุกลุ่มงาน")}</span>
-    <span class="ml-2 font-bold text-slate-800">| ${escapeHtml(record.testItem)}</span>
-  `;
+  const detailMeta = document.getElementById("detail-meta");
+  if (detailMeta) {
+    detailMeta.innerHTML = `
+      ${record.source === "top-down" ? '<span class="pill bg-emerald-100 text-emerald-700 border border-emerald-200">Top-down</span>' : '<span class="pill bg-blue-100 text-blue-700 border border-blue-200">Bottom-up</span>'}
+      <span class="ml-2 pill bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(record.moduleLabel)}</span>
+      <span class="ml-2 font-bold text-blue-600 font-mono">[${escapeHtml(record.labNo)}]</span>
+      <span class="ml-1 font-semibold text-slate-700">${escapeHtml(record.groupName || "ไม่ระบุกลุ่มงาน")}</span>
+      <span class="ml-2 font-bold text-slate-800">| ${escapeHtml(record.testItem)}</span>
+    `;
+  }
 
   const modal = document.getElementById("modal");
   if (modal) {
@@ -840,9 +852,12 @@ function loadBack() {
 function confirmLoad() {
   if (!selectedPayload || !selectedRecord) return;
 
-  const inputPass = document.getElementById("load-password").value;
-  if (inputPass !== loadBackTarget) {
-    document.getElementById("load-error").classList.remove("hidden");
+  const passInput = document.getElementById("load-password");
+  if (!passInput) return;
+
+  if (passInput.value !== loadBackTarget) {
+    const errorMsg = document.getElementById("load-error");
+    if (errorMsg) errorMsg.classList.remove("hidden");
     return;
   }
 
@@ -869,8 +884,10 @@ function confirmLoad() {
 
 function openDeleteModal(id, userName, source) {
   deleteTarget = { id, userName, source };
-  document.getElementById("delete-password").value = "";
-  document.getElementById("delete-error").classList.add("hidden");
+  const delPass = document.getElementById("delete-password");
+  const delErr = document.getElementById("delete-error");
+  if (delPass) delPass.value = "";
+  if (delErr) delErr.classList.add("hidden");
 
   const modal = document.getElementById("delete-modal");
   if (modal) {
@@ -888,9 +905,12 @@ function closeDeleteModal() {
 }
 
 async function confirmDelete() {
-  const inputPass = document.getElementById("delete-password").value;
-  if (inputPass !== deleteTarget.userName) {
-    document.getElementById("delete-error").classList.remove("hidden");
+  const delPass = document.getElementById("delete-password");
+  if (!delPass) return;
+
+  if (delPass.value !== deleteTarget.userName) {
+    const delErr = document.getElementById("delete-error");
+    if (delErr) delErr.classList.remove("hidden");
     return;
   }
 
@@ -915,7 +935,10 @@ function drawBarChart(record) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  if (chartInstance) chartInstance.destroy();
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
 
   let labels = [];
   let rawData = [];
@@ -983,8 +1006,11 @@ async function refreshHistoryData() {
     btn.disabled = true; btn.style.opacity = "0.6";
     icon.classList.add("animate-spin");
   }
-  try { await loadHistory(); } catch (error) { console.error(error); } 
-  finally {
+  try { 
+    await loadHistory(); 
+  } catch (error) { 
+    console.error(error); 
+  } finally {
     if (btn && icon) {
       btn.disabled = false; btn.style.opacity = "1";
       icon.classList.remove("animate-spin");
@@ -992,40 +1018,41 @@ async function refreshHistoryData() {
   }
 }
 
+// ==========================================
+// 6. Visitor Counter
+// ==========================================
 async function initVisitorCounter() {
-    const countEl = document.getElementById('visitor-count');
-    if (!countEl) return;
-    
-    // 1. ดึงชื่อไฟล์ของหน้าปัจจุบันอัตโนมัติ (เช่น Bottom-up.html, add.html, crm.html)
-    let pageName = window.location.pathname.split('/').pop();
-    if (!pageName || pageName === '') pageName = 'index.html'; // ตัวเซฟตี้หากเข้าหน้าแรกเปล่าๆ
+  const countEl = document.getElementById('visitor-count');
+  if (!countEl) return;
 
-    // 2. ใส่ Web App URL ของ Google Apps Script ของคุณตรงนี้
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzpXGxPsjyZw0JzcyHBEaS7wcja44OKgzZIq9VTDgPEHnAMinTiZmECNekmOO_k2tvaTQ/exec';
-    
-    // ยิงพารามิเตอร์ action=hitPageCounter และระบุชื่อหน้าไปด้วย
-    const targetURL = `${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`;
+  const pageName = window.location.pathname.split('/').pop() || 'index.html';
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbyir5H1_bM6hfIU6iuPk0huah_MCye_FBfQ_0YxvzXgoo-RLcfWl2g2Aw2HuESv4T2aJw/exec';
 
-    try {
-        const res = await fetch(targetURL);
-        const data = await res.json();
-        
-        if (data.status === 'success' && data.count) {
-            countEl.innerText = Number(data.count).toLocaleString();
-        } else {
-            countEl.innerText = "Online";
-        }
-    } catch (err) {
-        console.warn('⚠️ ไม่สามารถอัปเดตยอดผู้เข้าชมได้:', err);
-        countEl.innerText = "Online";
+  try {
+    const res = await fetch(`${scriptURL}?action=hitPageCounter&page=${encodeURIComponent(pageName)}`, { redirect: 'follow' });
+    if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
+
+    const data = await res.json();
+    if (data && data.count !== undefined) {
+      countEl.innerText = Number(data.count).toLocaleString();
+    } else {
+      countEl.innerText = "Online";
     }
+  } catch (err) {
+    console.warn('⚠️ Visitor counter error:', err);
+    countEl.innerText = "Online";
+  }
 }
 
 // ==========================================
-// 6. DOMContentLoaded Initialization
+// 7. Event Listeners & Initializations
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  const CONFIG = { scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec" };
+
+  // --- 7.1 Report Problem Popup ---
+  const CONFIG = { 
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyC2PVPYpA5iG00T5poYzFcmVwN1SIvG9kO29I8XnNhA6LT8tut2ROMNYlMLY5mltt-lQ/exec" 
+  };
 
   const overlay = document.getElementById("reportOverlay");
   const form = document.getElementById("reportForm");
@@ -1036,32 +1063,85 @@ document.addEventListener("DOMContentLoaded", () => {
   const reportProblemLink = document.getElementById("reportProblemLink");
   const pageInput = document.getElementById("report-page");
 
-  if (overlay && form && reportSubmitBtn && statusBox && closeBtn && cancelBtn && reportProblemLink && pageInput) {
-    reportProblemLink.addEventListener("click", (e) => { e.preventDefault(); pageInput.value = window.location.href; overlay.hidden = false; });
-    closeBtn.addEventListener("click", () => { overlay.hidden = true; });
-    cancelBtn.addEventListener("click", () => { overlay.hidden = true; });
-    
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      reportSubmitBtn.disabled = true;
-      try {
-        await fetch(CONFIG.scriptUrl, { method: "POST", mode: "no-cors", body: JSON.stringify({ name: form.name.value, email: form.email.value, page: form.page.value, description: form.description.value }) });
-        statusBox.className = "report-status show success"; statusBox.textContent = "ส่งข้อมูลเรียบร้อยแล้ว";
-        setTimeout(() => { overlay.hidden = true; form.reset(); statusBox.className = "report-status"; }, 1200);
-      } catch (err) {
-        statusBox.className = "report-status show error"; statusBox.textContent = "เกิดข้อผิดพลาด";
-      } finally { reportSubmitBtn.disabled = false; }
-    });
-  }
+  reportProblemLink?.addEventListener("click", (e) => { 
+    e.preventDefault(); 
+    if (pageInput) pageInput.value = window.location.href; 
+    if (overlay) overlay.hidden = false; 
+  });
 
+  closeBtn?.addEventListener("click", () => { if (overlay) overlay.hidden = true; });
+  cancelBtn?.addEventListener("click", () => { if (overlay) overlay.hidden = true; });
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (reportSubmitBtn) reportSubmitBtn.disabled = true;
+
+    try {
+      await fetch(CONFIG.scriptUrl, { 
+        method: "POST", 
+        mode: "no-cors", 
+        body: JSON.stringify({ 
+          name: form.name?.value || "", 
+          email: form.email?.value || "", 
+          page: form.page?.value || "", 
+          description: form.description?.value || "" 
+        }) 
+      });
+
+      if (statusBox) {
+        statusBox.className = "report-status show success"; 
+        statusBox.textContent = "ส่งข้อมูลเรียบร้อยแล้ว";
+      }
+
+      setTimeout(() => { 
+        if (overlay) overlay.hidden = true; 
+        form.reset(); 
+        if (statusBox) statusBox.className = "report-status"; 
+      }, 1200);
+
+    } catch (err) {
+      if (statusBox) {
+        statusBox.className = "report-status show error"; 
+        statusBox.textContent = "เกิดข้อผิดพลาด";
+      }
+    } finally { 
+      if (reportSubmitBtn) reportSubmitBtn.disabled = false; 
+    }
+  });
+
+  // --- 7.2 Filters & Search Event Listeners ---
+  document.getElementById("group-filter")?.addEventListener("change", e => { 
+    selectedGroup = e.target.value; 
+    currentPage = 1; 
+    renderTable(); 
+  });
+
+  document.getElementById("search-input")?.addEventListener("input", e => { 
+    search = e.target.value.toLowerCase(); 
+    currentPage = 1; 
+    renderTable(); 
+  });
+
+  document.getElementById("date-start")?.addEventListener("change", e => { 
+    start = e.target.value; 
+    currentPage = 1; 
+    renderTable(); 
+  });
+
+  document.getElementById("date-end")?.addEventListener("change", e => { 
+    end = e.target.value; 
+    currentPage = 1; 
+    renderTable(); 
+  });
+
+  // --- 7.3 Data Load & Background Interval ---
   loadHistory();
   initVisitorCounter();
-  setInterval(loadHistory, 30000);
 
-  document.getElementById("group-filter")?.addEventListener("change", e => { selectedGroup = e.target.value; currentPage = 1; renderTable(); });
-  document.getElementById("search-input")?.addEventListener("input", e => { search = e.target.value.toLowerCase(); currentPage = 1; renderTable(); });
-  document.getElementById("date-start")?.addEventListener("change", e => { start = e.target.value; currentPage = 1; renderTable(); });
-  document.getElementById("date-end")?.addEventListener("change", e => { end = e.target.value; currentPage = 1; renderTable(); });
+  setInterval(() => {
+    loadHistory();
+  }, 30000);
+
 });
 </script>
 </body>
