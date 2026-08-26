@@ -1739,10 +1739,6 @@ function updateGroupChart(filteredItems) {
   });
 }
 
-// 🔥 จุดที่เอาไว้ใช้เปลี่ยนชื่อเพื่อ RESET ยอดวิว (เปลี่ยนคำในเครื่องหมายคำพูดได้เลยครับ)
-// วันไหนต้องการเริ่มนับ 1 ใหม่ ให้เปลี่ยนชื่อเป็นคำอื่น เช่น 'ainswertainty-target-v1', 'target-page-v2' เป็นต้น
-const VISITOR_COUNTER_ID = 'ainswertainty-target-v1'; 
-
 async function initVisitorCounter() {
     const countEl = document.getElementById('visitor-count');
     if (!countEl) return;
